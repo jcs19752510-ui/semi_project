@@ -11,7 +11,14 @@ const el = {
   emptyHint: document.getElementById("emptyHint"),
   boxplot: document.getElementById("boxplot"),
   aucLabel: document.getElementById("aucLabel"),
+  loadStatus: document.getElementById("loadStatus"),
 };
+
+function showLoadStatus(text, isError) {
+  el.loadStatus.textContent = text;
+  el.loadStatus.style.display = text ? "block" : "none";
+  el.loadStatus.classList.toggle("load-status-error", !!isError);
+}
 
 async function fetchJson(url) {
   const res = await fetch(url);
@@ -278,8 +285,31 @@ el.task.addEventListener("change", () => onTaskChanged().catch((err) => console.
 el.model.addEventListener("change", onModelChanged);
 el.btnQuery.addEventListener("click", () => onQueryClick());
 
+// Render 무료 티어처럼 서버가 비활성 상태에서 깨어나는 데 50초 이상 걸릴 수 있는
+// 배포 환경을 고려해, 최초 진입 시 업무 목록 로딩을 재시도한다. 이게 없으면
+// 콜드스타트 중 첫 요청만 실패하고도 화면엔 아무 표시가 없어 "고장난 것처럼" 보인다.
+async function loadTasksWithRetry() {
+  const maxAttempts = 8;
+  const delaysMs = [1000, 2000, 3000, 5000, 8000, 8000, 8000, 8000]; // 총 최대 약 45초
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      if (attempt > 1) showLoadStatus(`서버를 깨우는 중입니다... (${attempt}/${maxAttempts})`, false);
+      await loadTasks();
+      showLoadStatus("", false);
+      return;
+    } catch (err) {
+      console.error(err);
+      if (attempt === maxAttempts) {
+        showLoadStatus("업무 목록을 불러오지 못했습니다. 새로고침(F5)해서 다시 시도해 주세요.", true);
+        return;
+      }
+      await new Promise((resolve) => setTimeout(resolve, delaysMs[attempt - 1]));
+    }
+  }
+}
+
 (async function main() {
   initCharts();
   updateSelectedLabel();
-  await loadTasks();
+  await loadTasksWithRetry();
 })().catch((err) => console.error(err));

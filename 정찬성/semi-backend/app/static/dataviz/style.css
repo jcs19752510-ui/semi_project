@@ -135,6 +135,16 @@ body {
   color: var(--accent);
 }
 
+.load-status {
+  margin: 8px 32px 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.load-status-error {
+  color: #c0392b;
+}
+
 .empty-hint {
   text-align: center;
   color: var(--muted);
