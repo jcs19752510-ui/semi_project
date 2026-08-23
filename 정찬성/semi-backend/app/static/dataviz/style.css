@@ -33,82 +33,79 @@ body {
   font-size: 13px;
 }
 
-.summary-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 12px;
-  padding: 0 32px;
-}
-
-.card {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.card .label {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.card .value {
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.filters {
+.selector {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   gap: 16px;
   padding: 20px 32px;
+  background: var(--card-bg);
+  margin: 0 32px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
 }
 
-.filter-item {
+.selector-item {
   display: flex;
   flex-direction: column;
   gap: 4px;
   font-size: 13px;
 }
 
-.filter-item input,
-.filter-item select {
-  padding: 6px 8px;
+.selector-item select {
+  padding: 6px 10px;
   border: 1px solid var(--border);
   border-radius: 6px;
   font-size: 13px;
+  min-width: 160px;
 }
 
-.checkbox-item {
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
+.selector-item select:disabled {
+  background: #f0f1f3;
+  color: var(--muted);
+  cursor: not-allowed;
 }
 
-#btnReset {
-  padding: 8px 14px;
-  border: 1px solid var(--accent);
-  background: white;
-  color: var(--accent);
+#btnQuery {
+  padding: 9px 18px;
+  border: none;
+  background: var(--accent);
+  color: white;
   border-radius: 6px;
   cursor: pointer;
   font-size: 13px;
+  font-weight: 600;
 }
 
-#btnReset:hover {
-  background: var(--accent);
-  color: white;
+#btnQuery:disabled {
+  background: #b9c6e0;
+  cursor: not-allowed;
+}
+
+.selected-label {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.section-title {
+  font-size: 15px;
+  margin: 24px 32px 8px;
+  color: var(--text);
 }
 
 .charts {
+  padding: 0 32px;
+}
+
+.chart-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
-  padding: 0 32px;
+}
+
+.chart-grid.single {
+  grid-template-columns: 1fr;
 }
 
 .chart-box {
@@ -122,7 +119,7 @@ body {
   grid-column: 1 / -1;
 }
 
-.chart-box h2 {
+.chart-box h3 {
   margin: 0 0 12px;
   font-size: 14px;
   color: var(--muted);
@@ -132,69 +129,79 @@ body {
   max-height: 280px;
 }
 
+.auc-label {
+  float: right;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.empty-hint {
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  margin: 24px 0 40px;
+}
+
+/* ── 계좌잔고 boxplot(만족/불만족 비교) — 외부 차트 라이브러리 없이 CSS로 렌더링 ── */
+
+.boxplot {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  height: 260px;
+  padding-top: 8px;
+}
+
+.boxplot-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  height: 100%;
+  width: 45%;
+}
+
+.boxplot-track {
+  position: relative;
+  width: 60px;
+  height: 220px;
+  flex-shrink: 0;
+}
+
+.boxplot-whisker {
+  position: absolute;
+  left: 50%;
+  width: 0;
+  border-left: 2px solid;
+  transform: translateX(-50%);
+}
+
+.boxplot-box {
+  position: absolute;
+  left: 10%;
+  width: 80%;
+  border-radius: 3px;
+  opacity: 0.55;
+}
+
+.boxplot-median {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--text);
+}
+
+.boxplot-caption {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
 .table-section {
   margin: 24px 32px 40px;
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 16px;
-}
-
-.table-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 10px;
-}
-
-.table-header h2 {
-  margin: 0;
-  font-size: 14px;
-  color: var(--muted);
-}
-
-#tableInfo {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.table-scroll {
-  overflow-x: auto;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-th, td {
-  text-align: right;
-  padding: 6px 10px;
-  border-bottom: 1px solid var(--border);
-}
-
-th:first-child, td:first-child {
-  text-align: left;
-}
-
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 12px;
-}
-
-.pagination button {
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  background: white;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.pagination button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
 }
