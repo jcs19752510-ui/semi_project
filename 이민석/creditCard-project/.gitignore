@@ -1,0 +1,49 @@
+# --- Python 내부 캐시 및 빌드 파일 ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# --- 가상환경 ---
+venv/
+ENV/
+env/
+.venv/
+
+# --- 주피터 노트북 캐시 ---
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# --- IDE 및 운영체제 설정 ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- 본 프로젝트 데이터 및 출력물 (핵심 차단) ---
+# 1. 원천 데이터 디렉토리 또는 파일 (예: data/, *.csv 등)
+data/
+*.csv
+*.parquet
+*.feather
+
+# 2. 파이프라인 출력 모델 및 시각화 파일 (outputs 폴더 전체 차단)
+outputs/
