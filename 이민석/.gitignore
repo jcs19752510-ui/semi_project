@@ -1,0 +1,16 @@
+# === 데이터 파일 및 폴더 (CSV, Excel, JSON 등) ===
+*.csv
+*.xlsx
+*.xls
+*.json
+*.parquet
+*.h5
+*.pkl
+*.pickle
+
+# 특정 데이터 폴더 전체를 제외하고 싶을 때 (예: data/ 폴더)
+topics/
+dataset/
+datasets/
+input/
+output/
