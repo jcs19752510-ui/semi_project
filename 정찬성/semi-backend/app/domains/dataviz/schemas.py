@@ -120,3 +120,43 @@ class ROCCurve(BaseModel):
 
 class ModelResultResponse(BaseModel):
     curves: list[ROCCurve]
+
+
+# ── 문서 군집화(03. 문서 군집화, doc_clustering) 전용 응답 ─────────────────────
+#
+# 산탄데르/신용카드는 "이진 타깃(0/1) 불균형 분포"가 자연스럽지만, 문서 군집화는
+# 지도학습 타깃 자체가 없다(비지도 KMeans 군집화 + 파일명에서 뽑은 카테고리 다중클래스
+# 보조검증). PreprocessCheckResponse의 satisfied/unsatisfied 이진 스키마를 억지로
+# 재사용하면 의미가 왜곡되므로, 이 업무 전용 응답 스키마를 별도로 둔다.
+# (모델 수행결과는 다중클래스 macro One-vs-Rest ROC로 계산해 기존 ModelResultResponse를
+#  그대로 재사용한다 — §docclustering.py compute_model_result.)
+
+
+class CountBin(BaseModel):
+    range: str
+    count: int
+
+
+class LabeledCounts(BaseModel):
+    labels: list[str]
+    counts: list[int]
+
+
+class GroupFiveNumberSummary(BaseModel):
+    group: str
+    summary: FiveNumberSummary
+
+
+class DocClusteringLabels(BaseModel):
+    category_title: str
+    length_title: str
+    cluster_title: str
+    boxplot_title: str
+
+
+class DocClusteringPreprocessResponse(BaseModel):
+    category_distribution: LabeledCounts
+    length_bins: list[CountBin]
+    cluster_distribution: LabeledCounts
+    length_boxplot: list[GroupFiveNumberSummary]
+    labels: DocClusteringLabels

@@ -52,6 +52,8 @@ def client() -> TestClient:
 
 
 # TC-DV2-01 (TC-DV1/TC-50)
+# 2026-08-24(2차): 문서 군집화 데이터셋을 확보해 enabled=True로 전환(§docclustering.py).
+# 문서 군집화 전용 케이스는 tests/test_doc_clustering.py로 분리했다.
 def test_tasks(client: TestClient) -> None:
     res = client.get("/dataviz/tasks")
     assert res.status_code == 200
@@ -59,7 +61,7 @@ def test_tasks(client: TestClient) -> None:
     assert body == [
         {"id": "santander", "label": "01 산탄데르", "enabled": True},
         {"id": "credit_card", "label": "02 신용카드", "enabled": True},
-        {"id": "doc_clustering", "label": "03 문서 군집화", "enabled": False},
+        {"id": "doc_clustering", "label": "03 문서 군집화", "enabled": True},
         {"id": "market_price", "label": "04 마켓 가격 예측", "enabled": False},
     ]
 
@@ -80,8 +82,15 @@ def test_models_for_credit_card_task_same_catalog(client: TestClient) -> None:
     assert {m["id"] for m in res.json()} == MODEL_IDS
 
 
-def test_models_for_disabled_task_is_empty(client: TestClient) -> None:
+def test_models_for_doc_clustering_task_same_catalog(client: TestClient) -> None:
+    # 2026-08-24(2차): 문서 군집화도 5종 분류기 카탈로그를 그대로 재사용한다(§registry.MODELS).
     res = client.get("/dataviz/models", params={"task": "doc_clustering"})
+    assert res.status_code == 200
+    assert {m["id"] for m in res.json()} == MODEL_IDS
+
+
+def test_models_for_disabled_task_is_empty(client: TestClient) -> None:
+    res = client.get("/dataviz/models", params={"task": "market_price"})
     assert res.status_code == 200
     assert res.json() == []
 
@@ -202,10 +211,11 @@ def test_santander_unaffected_when_creditcard_csv_missing(
     assert res2.status_code == 200
 
 
-# 2026-08-24 추가: 문서 군집화/마켓 가격 예측은 드롭다운에는 보이지만(§업무종류.png)
-# 데이터 파이프라인이 없어 선택 시 409(준비중)로 명확히 구분된다(404=존재하지 않음과 다름).
+# 2026-08-24 추가: 마켓 가격 예측은 드롭다운에는 보이지만(§업무종류.png) 데이터 파이프라인이
+# 없어 선택 시 409(준비중)로 명확히 구분된다(404=존재하지 않음과 다름). 문서 군집화는
+# 2026-08-24(2차)에 데이터셋을 확보해 이 카테고리에서 빠졌다(§test_doc_clustering.py).
 def test_preprocess_check_disabled_task_is_409(client: TestClient) -> None:
-    res = client.get("/dataviz/preprocess-check", params={"task": "doc_clustering", "model": "all"})
+    res = client.get("/dataviz/preprocess-check", params={"task": "market_price", "model": "all"})
     assert res.status_code == 409
 
 

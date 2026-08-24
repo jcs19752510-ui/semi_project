@@ -224,6 +224,12 @@ def _five_number_summary(series: pd.Series) -> dict:
     }
 
 
+def five_number_summary(series: pd.Series) -> dict:
+    """_five_number_summary의 공개 래퍼. docclustering.py처럼 이진 target_col 그룹화
+    없이(클러스터 등 N개 그룹) 동일한 1.5×IQR whisker 규칙을 재사용하고 싶을 때 쓴다."""
+    return _five_number_summary(series)
+
+
 def compute_value_boxplot(df: pd.DataFrame, column: str, target_col: str = "TARGET") -> dict:
     """column의 클래스(0/1)별 5수치요약(min/q1/median/q3/max) +
     렌더링용 whisker_low/high, outlier_count.

@@ -195,7 +195,10 @@ body {
   align-items: center;
   gap: 8px;
   height: 100%;
-  width: 45%;
+  /* 45% 고정폭이었으나 문서 군집화는 그룹(클러스터)이 2개보다 많을 수 있어(§app.js
+     renderBoxplotGroups) 그룹 수와 무관하게 동일 폭으로 나눠 갖도록 flex로 바꿨다. */
+  flex: 1 1 0;
+  max-width: 160px;
 }
 
 .boxplot-track {

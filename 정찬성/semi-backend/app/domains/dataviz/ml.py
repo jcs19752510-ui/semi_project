@@ -82,6 +82,17 @@ def _build_classifier(model: str):
     raise ValueError(f"지원하지 않는 모델입니다: {model}")
 
 
+def build_classifier(model: str):
+    """_build_classifier의 공개 래퍼. docclustering.py가 동일 5종 분류기 설정을
+    (다중클래스 학습에도) 그대로 재사용해 설정이 두 곳에서 따로 노는 걸 막는다."""
+    return _build_classifier(model)
+
+
+def downsample_curve(fpr: np.ndarray, tpr: np.ndarray, points: int = CURVE_POINTS) -> tuple[list[float], list[float]]:
+    """_downsample의 공개 래퍼(기본 포인트 수는 이 모듈의 CURVE_POINTS와 동일하게 맞춘다)."""
+    return _downsample(fpr, tpr, points)
+
+
 def _downsample(fpr: np.ndarray, tpr: np.ndarray, points: int) -> tuple[list[float], list[float]]:
     if len(fpr) <= points:
         return fpr.tolist(), tpr.tolist()

@@ -109,6 +109,10 @@ function updateQueryButton() {
 
 // ── 차트 렌더링 ────────────────────────────────────────────────────────
 
+// 문서 군집화 boxplot(클러스터 N개)에 쓰는 팔레트. 이진(만족/불만족) 계열은 기존
+// accent/보조색을 그대로 쓰고, 3번째 색부터는 문서 군집화 전용으로 추가했다.
+const CLUSTER_COLORS = ["#2e6de5", "#e5572e", "#2e8b57", "#8e44ad", "#f1a208"];
+
 let targetChart, ageRatioChart, balanceRatioChart, rocChart;
 
 function initCharts() {
@@ -118,7 +122,13 @@ function initCharts() {
       labels: ["만족(0)", "불만족(1)"],
       datasets: [{ label: "고객 수", data: [], backgroundColor: ["#2e6de5", "#e5572e"] }],
     },
-    options: { responsive: true, plugins: { legend: { display: false } } },
+    options: {
+      responsive: true,
+      // 문서 군집화는 카테고리가 최대 36종까지 나올 수 있어(§docclustering.py) 라벨이
+      // 전부 겹쳐 보이지 않도록 개수 제한을 둔다. 산탄데르/신용카드(2개 막대)에는 영향 없음.
+      scales: { x: { ticks: { maxTicksLimit: 15, autoSkip: true } } },
+      plugins: { legend: { display: false } },
+    },
   });
 
   ageRatioChart = new Chart(document.getElementById("ageRatioChart"), {
@@ -195,27 +205,70 @@ function renderPreprocessCheck(body) {
 
   targetChart.data.labels = [labels.negative, labels.positive];
   targetChart.data.datasets[0].data = [body.target_distribution.satisfied, body.target_distribution.unsatisfied];
+  targetChart.data.datasets[0].backgroundColor = ["#2e6de5", "#e5572e"];
   targetChart.update();
 
   ageRatioChart.data.labels = body.bin1_ratio.map((b) => binLabel(b.range));
   ageRatioChart.data.datasets[0].data = body.bin1_ratio.map((b) => b.ratio);
+  ageRatioChart.data.datasets[0].label = "불만족 비율(%)";
+  ageRatioChart.options.scales.y.title.text = "%";
   ageRatioChart.update();
 
   balanceRatioChart.data.labels = body.bin2_ratio.map((b) => binLabel(b.range));
   balanceRatioChart.data.datasets[0].data = body.bin2_ratio.map((b) => b.ratio);
+  balanceRatioChart.data.datasets[0].label = "불만족 비율(%)";
+  balanceRatioChart.options.scales.y.title.text = "%";
   balanceRatioChart.update();
 
-  renderBoxplot(body.value_boxplot, labels);
+  renderBoxplotGroups([
+    { label: labels.negative, color: "#2e6de5", summary: body.value_boxplot.satisfied },
+    { label: labels.positive, color: "#e5572e", summary: body.value_boxplot.unsatisfied },
+  ]);
 }
 
-function renderBoxplot(box, labels) {
-  // whisker_low/high(1.5×IQR 표준 수염) 기준으로 축을 잡는다 — saldo_var30처럼 꼬리가
-  // 아주 긴 컬럼을 진짜 min/max로 스케일링하면 박스가 실선처럼 눌려 안 보이게 된다.
-  const groups = [
-    { key: "satisfied", label: labels.negative, color: "#2e6de5" },
-    { key: "unsatisfied", label: labels.positive, color: "#e5572e" },
-  ];
-  const allValues = groups.flatMap((g) => [box[g.key].whisker_low, box[g.key].whisker_high]);
+// ── 문서 군집화(doc_clustering) 전용 렌더링 — 이진 타깃이 없는 비지도 업무라
+// 응답 스키마 자체가 다르다(§schemas.DocClusteringPreprocessResponse). 기존 4개
+// 차트 박스(targetChart/ageRatioChart/balanceRatioChart/boxplot)를 그대로 재사용하되
+// "카테고리 분포/문서 길이 구간/군집 분포/군집별 길이 비교"로 내용만 바꿔 그린다.
+
+function renderDocClusteringPreprocessCheck(body) {
+  const labels = body.labels;
+  document.getElementById("targetChartTitle").textContent = labels.category_title;
+  document.getElementById("bin1ChartTitle").textContent = labels.length_title;
+  document.getElementById("bin2ChartTitle").textContent = labels.cluster_title;
+  document.getElementById("boxplotTitle").textContent = labels.boxplot_title;
+
+  targetChart.data.labels = body.category_distribution.labels;
+  targetChart.data.datasets[0].data = body.category_distribution.counts;
+  targetChart.data.datasets[0].backgroundColor = "#2e6de5";
+  targetChart.update();
+
+  ageRatioChart.data.labels = body.length_bins.map((b) => binLabel(b.range));
+  ageRatioChart.data.datasets[0].data = body.length_bins.map((b) => b.count);
+  ageRatioChart.data.datasets[0].label = "문서 수";
+  ageRatioChart.options.scales.y.title.text = "문서 수";
+  ageRatioChart.update();
+
+  balanceRatioChart.data.labels = body.cluster_distribution.labels;
+  balanceRatioChart.data.datasets[0].data = body.cluster_distribution.counts;
+  balanceRatioChart.data.datasets[0].label = "문서 수";
+  balanceRatioChart.options.scales.y.title.text = "문서 수";
+  balanceRatioChart.update();
+
+  renderBoxplotGroups(
+    body.length_boxplot.map((g, i) => ({
+      label: g.group,
+      color: CLUSTER_COLORS[i % CLUSTER_COLORS.length],
+      summary: g.summary,
+    }))
+  );
+}
+
+function renderBoxplotGroups(groups) {
+  // whisker_low/high(1.5×IQR 표준 수염) 기준으로 축을 잡는다 — 꼬리가 아주 긴 값을
+  // 진짜 min/max로 스케일링하면 박스가 실선처럼 눌려 안 보이게 된다. groups 길이가
+  // 2(만족/불만족)든 3(군집)이든 동일하게 동작하도록 일반화했다.
+  const allValues = groups.flatMap((g) => [g.summary.whisker_low, g.summary.whisker_high]);
   const lo = Math.min(...allValues);
   const hi = Math.max(...allValues);
   const span = hi - lo || 1;
@@ -223,7 +276,7 @@ function renderBoxplot(box, labels) {
 
   el.boxplot.innerHTML = "";
   for (const g of groups) {
-    const s = box[g.key];
+    const s = g.summary;
     const col = document.createElement("div");
     col.className = "boxplot-col";
 
@@ -261,6 +314,12 @@ function renderModelResult(body) {
   // §0-1-2 [기본값]: 백엔드는 다중 곡선을 반환할 수 있으나, 프론트는 curves[0]만 렌더링한다.
   const curve = body.curves[0];
   if (!curve) return;
+
+  // 문서 군집화는 타깃이 다중클래스라 ROC가 "macro One-vs-Rest 평균"이라는 점을
+  // 제목에 명시한다(산탄데르/신용카드는 이진이라 표준 ROC 그대로).
+  document.getElementById("rocChartTitle").textContent =
+    state.task === "doc_clustering" ? "ROC 곡선 (다중클래스 macro One-vs-Rest 평균)" : "ROC 곡선";
+
   rocChart.data.datasets[0].data = curve.fpr.map((x, i) => ({ x, y: curve.tpr[i] }));
   rocChart.data.datasets[0].label = `${curve.label} ROC`;
   rocChart.update();
@@ -287,7 +346,11 @@ async function onQueryClick() {
 
   const errors = [];
   if (preprocessResult.status === "fulfilled") {
-    renderPreprocessCheck(preprocessResult.value);
+    if (task === "doc_clustering") {
+      renderDocClusteringPreprocessCheck(preprocessResult.value);
+    } else {
+      renderPreprocessCheck(preprocessResult.value);
+    }
   } else {
     console.error(preprocessResult.reason);
     errors.push(`전처리검증: ${preprocessResult.reason.message}`);

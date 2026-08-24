@@ -4,9 +4,10 @@ import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
 
-from app.domains.dataviz import crud, ml, registry, service
+from app.domains.dataviz import crud, docclustering, ml, registry, service
 from app.domains.dataviz.schemas import (
     AgeDistributionResponse,
+    DocClusteringPreprocessResponse,
     HistogramResponse,
     ModelOption,
     ModelResultResponse,
@@ -128,12 +129,21 @@ def _dataframe_for_task(task: str) -> pd.DataFrame:
     return crud.get_dataframe()
 
 
-@router.get("/dataviz/preprocess-check", response_model=PreprocessCheckResponse)
+@router.get(
+    "/dataviz/preprocess-check",
+    response_model=PreprocessCheckResponse | DocClusteringPreprocessResponse,
+)
 def preprocess_check(
     task: str = Query(...),
     model: str = Query(default="all"),
 ) -> dict:
     _validate_task_model(task, model)
+    if task == "doc_clustering":
+        # 문서 군집화는 지도학습 이진 타깃이 없는 비지도 업무라(§docclustering.py 모듈
+        # docstring) santander/credit_card와 응답 스키마 자체가 다르다 — service.py의
+        # DOMAIN_CHARTS 이진 파이프라인 대신 이 업무 전용 경로를 탄다.
+        document_df, _ = docclustering.get_document_corpus()
+        return docclustering.run_preprocess_check(document_df)
     df = _dataframe_for_task(task)
     return service.run_preprocess_check(task, df)
 
@@ -144,12 +154,21 @@ def model_result(
     model: str = Query(default="all"),
 ) -> dict:
     _validate_task_model(task, model)
-    df = _dataframe_for_task(task)
     if model == "all":
         # §0-1-2 [기본값]: 백엔드는 다중 곡선을 반환할 수 있어야 하지만, 프론트 오버레이는
         # 후속 이터레이션이다(app.js는 curves[0]만 그린다).
         target_models = [m["id"] for m in registry.get_models(task)]
     else:
         target_models = [model]
+
+    if task == "doc_clustering":
+        # 타깃이 다중클래스(카테고리)라 ROC/AUC는 macro One-vs-Rest 평균으로 계산하되
+        # (§docclustering.py), 응답 스키마(ROCCurve)는 santander/credit_card와 동일하게
+        # 재사용해 프론트 ROC 차트를 그대로 쓸 수 있게 한다.
+        document_df, feature_matrix = docclustering.get_document_corpus()
+        curves = [docclustering.compute_model_result(document_df, feature_matrix, m) for m in target_models]
+        return {"curves": curves}
+
+    df = _dataframe_for_task(task)
     curves = [ml.compute_roc_curve(df, task, m) for m in target_models]
     return {"curves": curves}
