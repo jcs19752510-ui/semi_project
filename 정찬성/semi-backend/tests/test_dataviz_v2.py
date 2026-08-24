@@ -5,6 +5,8 @@ from fastapi.testclient import TestClient
 from app.domains.dataviz import crud
 from app.main import app
 
+MODEL_IDS = {"logistic_regression", "lightgbm", "xgboost", "random_forest", "gradient_boost"}
+
 
 @pytest.fixture(autouse=True)
 def sample_dataframe():
@@ -23,6 +25,22 @@ def sample_dataframe():
     app.dependency_overrides.pop(crud.get_dataframe, None)
 
 
+@pytest.fixture(autouse=True)
+def sample_creditcard_dataframe():
+    # V1 하나만 있어도 되는 소표본이 아니라, ml.FEATURE_COLUMNS["credit_card"](V1~V28+Amount)를
+    # 전부 채워야 model-result 엔드포인트가 실제로 학습·평가를 수행할 수 있다.
+    rows = 6
+    data = {"Time": [0, 1, 2, 3, 4, 5]}
+    for i in range(1, 29):
+        data[f"V{i}"] = [float(i + r) for r in range(rows)]
+    data["Amount"] = [10.0, 20.0, 5000.0, 15.0, 30.0, 4000.0]
+    data["Class"] = [0, 0, 1, 0, 0, 1]
+    df = pd.DataFrame(data)
+    app.dependency_overrides[crud.get_creditcard_dataframe] = lambda: df
+    yield df
+    app.dependency_overrides.pop(crud.get_creditcard_dataframe, None)
+
+
 @pytest.fixture
 def client() -> TestClient:
     return TestClient(app)
@@ -32,7 +50,13 @@ def client() -> TestClient:
 def test_tasks(client: TestClient) -> None:
     res = client.get("/dataviz/tasks")
     assert res.status_code == 200
-    assert res.json() == [{"id": "santander", "label": "1.산탄데르"}]
+    body = res.json()
+    assert body == [
+        {"id": "santander", "label": "01 산탄데르", "enabled": True},
+        {"id": "credit_card", "label": "02 신용카드", "enabled": True},
+        {"id": "doc_clustering", "label": "03 문서 군집화", "enabled": False},
+        {"id": "market_price", "label": "04 마켓 가격 예측", "enabled": False},
+    ]
 
 
 # TC-DV2-02 (TC-DV2/TC-51)
@@ -40,7 +64,21 @@ def test_models_with_task(client: TestClient) -> None:
     res = client.get("/dataviz/models", params={"task": "santander"})
     assert res.status_code == 200
     body = res.json()
-    assert {"id": "lightgbm", "label": "1.lightGBM"} in body
+    assert {m["id"] for m in body} == MODEL_IDS
+    assert {"id": "lightgbm", "label": "LightGBM"} in body
+    assert {"id": "logistic_regression", "label": "로지스틱 회귀"} in body
+
+
+def test_models_for_credit_card_task_same_catalog(client: TestClient) -> None:
+    res = client.get("/dataviz/models", params={"task": "credit_card"})
+    assert res.status_code == 200
+    assert {m["id"] for m in res.json()} == MODEL_IDS
+
+
+def test_models_for_disabled_task_is_empty(client: TestClient) -> None:
+    res = client.get("/dataviz/models", params={"task": "doc_clustering"})
+    assert res.status_code == 200
+    assert res.json() == []
 
 
 # TC-DV2-03 (TC-52) — AC-DV2-01
@@ -59,23 +97,30 @@ def test_preprocess_check_target_distribution(client: TestClient) -> None:
     assert dist["satisfied"] + dist["unsatisfied"] == 5
     assert dist["satisfied"] == 3
     assert dist["unsatisfied"] == 2
+    assert body["labels"] == {
+        "negative": "만족(0)",
+        "positive": "불만족(1)",
+        "bin1_title": "연령 구간별 불만족 고객 비율",
+        "bin2_title": "계좌잔고 구간별 불만족 고객 비율",
+        "box_title": "계좌잔고(saldo_var30) 만족여부별 비교",
+    }
 
 
 # TC-DV2-05 (TC-DV4)
-def test_preprocess_check_age_ratio_bins(client: TestClient) -> None:
+def test_preprocess_check_bin1_ratio(client: TestClient) -> None:
     res = client.get("/dataviz/preprocess-check", params={"task": "santander", "model": "lightgbm"})
     assert res.status_code == 200
-    bins = res.json()["age_unsatisfied_ratio"]
+    bins = res.json()["bin1_ratio"]
     assert len(bins) >= 1
     for b in bins:
         assert 0.0 <= b["ratio"] <= 100.0
 
 
 # TC-DV2-06 (TC-DV5)
-def test_preprocess_check_balance_boxplot_five_number_summary(client: TestClient) -> None:
+def test_preprocess_check_value_boxplot_five_number_summary(client: TestClient) -> None:
     res = client.get("/dataviz/preprocess-check", params={"task": "santander", "model": "lightgbm"})
     assert res.status_code == 200
-    box = res.json()["balance_boxplot"]
+    box = res.json()["value_boxplot"]
     for group in ("satisfied", "unsatisfied"):
         summary = box[group]
         assert set(summary.keys()) == {
@@ -108,8 +153,36 @@ def test_model_result_all_models(client: TestClient) -> None:
     res = client.get("/dataviz/model-result", params={"task": "santander", "model": "all"})
     assert res.status_code == 200
     curves = res.json()["curves"]
-    assert len(curves) == 2  # registry에 등록된 모델(lightgbm, random_forest) 수만큼
-    assert {c["model"] for c in curves} == {"lightgbm", "random_forest"}
+    assert len(curves) == 5  # registry MODEL_CATALOG 5종 전부
+    assert {c["model"] for c in curves} == MODEL_IDS
+
+
+# 2026-08-24 추가: 업무명이 신용카드일 때도 동일한 5종 모델 카탈로그로 실제 학습이 수행된다
+# (타깃 컬럼 Class, 피처 V1~V28+Amount — ml.FEATURE_COLUMNS["credit_card"] 참고).
+def test_credit_card_preprocess_check_labels(client: TestClient) -> None:
+    res = client.get("/dataviz/preprocess-check", params={"task": "credit_card", "model": "xgboost"})
+    assert res.status_code == 200
+    body = res.json()
+    assert body["target_distribution"] == {"satisfied": 4, "unsatisfied": 2}
+    assert body["labels"]["negative"] == "정상(0)"
+    assert body["labels"]["positive"] == "사기(1)"
+
+
+def test_credit_card_model_result_all_models(client: TestClient) -> None:
+    res = client.get("/dataviz/model-result", params={"task": "credit_card", "model": "all"})
+    assert res.status_code == 200
+    curves = res.json()["curves"]
+    assert len(curves) == 5
+    assert {c["model"] for c in curves} == MODEL_IDS
+    for c in curves:
+        assert 0.0 <= c["auc"] <= 1.0
+
+
+# 2026-08-24 추가: 문서 군집화/마켓 가격 예측은 드롭다운에는 보이지만(§업무종류.png)
+# 데이터 파이프라인이 없어 선택 시 409(준비중)로 명확히 구분된다(404=존재하지 않음과 다름).
+def test_preprocess_check_disabled_task_is_409(client: TestClient) -> None:
+    res = client.get("/dataviz/preprocess-check", params={"task": "doc_clustering", "model": "all"})
+    assert res.status_code == 409
 
 
 # TC-DV2-09 (TC-55) — AC-DV2-06

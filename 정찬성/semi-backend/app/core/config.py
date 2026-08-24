@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     session_ttl_seconds: int = 3600
 
     santander_csv_path: str = "../santander-customer-satisfaction/train.csv"
+    creditcard_csv_path: str = "../ipynb/data/creditcard.csv"
 
 
 @lru_cache

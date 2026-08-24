@@ -27,6 +27,19 @@ def get_dataframe() -> pd.DataFrame:
     return load_dataframe()
 
 
+@lru_cache
+def load_creditcard_dataframe() -> pd.DataFrame:
+    """캐글 신용카드 사기검출 원본 CSV(284,807행). V1~V28은 이미 PCA로 익명화된 값이라
+    산탄데르처럼 usecols로 컬럼을 추릴 이유가 없어(전 컬럼이 ML 피처거나 차트에 쓰임) 그대로 읽는다."""
+    settings = get_settings()
+    return pd.read_csv(settings.creditcard_csv_path)
+
+
+def get_creditcard_dataframe() -> pd.DataFrame:
+    """FastAPI Depends용 진입점. 테스트에서는 이 함수를 override해 작은 표본으로 대체한다."""
+    return load_creditcard_dataframe()
+
+
 def apply_filters(
     df: pd.DataFrame,
     target: int | None = None,
@@ -120,20 +133,50 @@ def get_age_distribution(df: pd.DataFrame, bins: int) -> dict:
 
 
 # ── v2(업무/모델 선택형, TRD 99-02) — 전처리 데이터 검증결과 4종 ────────────────
+#
+# 2026-08-24: 업무가 산탄데르 1종뿐일 때는 "연령"/"계좌잔고"/TARGET 컬럼명을 함수에
+# 그대로 박아둬도 됐지만, 신용카드(타깃 컬럼 Class, 비교 축 Time/Amount) 업무가 추가되며
+# 컬럼명을 파라미터로 받는 범용 함수로 바꿨다. 업무별 실제 컬럼/문구 매핑은 DOMAIN_CHARTS.
+DOMAIN_CHARTS: dict[str, dict] = {
+    "santander": {
+        "target_col": "TARGET",
+        "negative_label": "만족(0)",
+        "positive_label": "불만족(1)",
+        "bin1_col": "var15",
+        "bin1_title": "연령 구간별 불만족 고객 비율",
+        "bin2_col": "saldo_var30",
+        "bin2_title": "계좌잔고 구간별 불만족 고객 비율",
+        "box_col": "saldo_var30",
+        "box_title": "계좌잔고(saldo_var30) 만족여부별 비교",
+    },
+    "credit_card": {
+        "target_col": "Class",
+        "negative_label": "정상(0)",
+        "positive_label": "사기(1)",
+        "bin1_col": "Time",
+        "bin1_title": "거래시각 구간별 사기 비율",
+        "bin2_col": "Amount",
+        "bin2_title": "거래금액 구간별 사기 비율",
+        "box_col": "Amount",
+        "box_title": "거래금액(Amount) 사기여부별 비교",
+    },
+}
 
 
-def compute_target_distribution(df: pd.DataFrame) -> dict:
-    """TARGET 클래스 불균형 분포. v1의 get_target_distribution과 달리
-    {labels, counts} 배열이 아니라 v2 스키마({satisfied, unsatisfied})로 반환한다."""
-    counts = df["TARGET"].value_counts()
+def compute_target_distribution(df: pd.DataFrame, target_col: str = "TARGET") -> dict:
+    """타깃 클래스(0/1) 불균형 분포. v1의 get_target_distribution과 달리
+    {labels, counts} 배열이 아니라 v2 스키마({satisfied, unsatisfied})로 반환한다.
+    필드명은 "만족/불만족" 전용이 아니라 "음성(0)/양성(1)" 클래스를 뜻하는 고정 스키마다
+    — 업무별 실제 표시 문구는 DOMAIN_CHARTS의 negative_label/positive_label을 쓴다."""
+    counts = df[target_col].value_counts()
     return {
         "satisfied": int(counts.get(0, 0)),
         "unsatisfied": int(counts.get(1, 0)),
     }
 
 
-def _quantile_unsatisfied_ratio(df: pd.DataFrame, column: str, bins: int) -> list[dict]:
-    """column을 bins개 분위(quantile) 구간으로 나눠 구간별 불만족(TARGET=1) 비율(%)을 계산한다.
+def compute_ratio_bins(df: pd.DataFrame, column: str, bins: int = 5, target_col: str = "TARGET") -> list[dict]:
+    """column을 bins개 분위(quantile) 구간으로 나눠 구간별 양성 클래스(target_col=1) 비율(%)을 계산한다.
     §0-1-6 [기본값]: 비율은 소수점 1자리로 반올림."""
     if len(df) == 0:
         return []
@@ -144,21 +187,13 @@ def _quantile_unsatisfied_ratio(df: pd.DataFrame, column: str, bins: int) -> lis
         binned = pd.cut(df[column], bins=1)
 
     result: list[dict] = []
-    for interval, group in df.groupby(binned, observed=True)["TARGET"]:
+    for interval, group in df.groupby(binned, observed=True)[target_col]:
         total = len(group)
         if total == 0:
             continue
         ratio = round(float((group == 1).sum()) / total * 100, 1)
         result.append({"range": str(interval), "ratio": ratio})
     return result
-
-
-def compute_age_unsatisfied_ratio(df: pd.DataFrame, bins: int = 5) -> list[dict]:
-    return _quantile_unsatisfied_ratio(df, "var15", bins)
-
-
-def compute_balance_unsatisfied_ratio(df: pd.DataFrame, bins: int = 5) -> list[dict]:
-    return _quantile_unsatisfied_ratio(df, "saldo_var30", bins)
 
 
 def _five_number_summary(series: pd.Series) -> dict:
@@ -189,12 +224,12 @@ def _five_number_summary(series: pd.Series) -> dict:
     }
 
 
-def compute_balance_boxplot(df: pd.DataFrame) -> dict:
-    """계좌잔고(saldo_var30) 만족여부별 5수치요약(min/q1/median/q3/max) +
+def compute_value_boxplot(df: pd.DataFrame, column: str, target_col: str = "TARGET") -> dict:
+    """column의 클래스(0/1)별 5수치요약(min/q1/median/q3/max) +
     렌더링용 whisker_low/high, outlier_count.
     §0-1-3 [기본값, 사용자 확정]: 통계치는 클리핑 없이 원본 그대로 계산하고,
     화면 표시(whisker)만 1.5×IQR 표준 방식으로 그린다."""
     return {
-        "satisfied": _five_number_summary(df[df["TARGET"] == 0]["saldo_var30"]),
-        "unsatisfied": _five_number_summary(df[df["TARGET"] == 1]["saldo_var30"]),
+        "satisfied": _five_number_summary(df[df[target_col] == 0][column]),
+        "unsatisfied": _five_number_summary(df[df[target_col] == 1][column]),
     }

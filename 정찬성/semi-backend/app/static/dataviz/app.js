@@ -36,7 +36,10 @@ async function loadTasks() {
   for (const t of tasks) {
     const opt = document.createElement("option");
     opt.value = t.id;
-    opt.textContent = t.label;
+    // 업무종류.png 기준 4종을 전부 드롭다운에 "표시"하되(§요청), 데이터 파이프라인이
+    // 아직 없는 업무(문서 군집화/마켓 가격 예측)는 선택만 못 하도록 disabled 처리한다.
+    opt.textContent = t.enabled ? t.label : `${t.label} (준비중)`;
+    opt.disabled = !t.enabled;
     el.task.appendChild(opt);
   }
 }
@@ -44,7 +47,8 @@ async function loadTasks() {
 function setModelDisabled(disabled) {
   el.model.disabled = disabled;
   if (disabled) {
-    el.model.innerHTML = '<option value="">전체</option>';
+    // 2026-08-24 변경: "전체" 옵션 제거 요청 — 업무 미선택 시에는 아예 빈 목록으로 둔다.
+    el.model.innerHTML = "";
     state.model = "";
   }
 }
@@ -55,14 +59,17 @@ async function onTaskChanged() {
   updateSelectedLabel();
 
   if (state.task === "") {
-    // §0-1-1 [기본값]: 업무명 미선택("전체") 시 모델명은 "전체" 고정 + 비활성화.
+    // §0-1-1 [기본값]: 업무명 미선택 시 모델명은 비워두고 비활성화.
     setModelDisabled(true);
     updateQueryButton();
     return;
   }
 
   const models = await fetchJson(`/dataviz/models?task=${encodeURIComponent(state.task)}`);
-  el.model.innerHTML = '<option value="">전체</option>';
+  // 2026-08-24 변경: "전체"(model=all) 옵션 제거 — 신용카드처럼 대용량 업무에서
+  // 5개 모델을 한꺼번에 학습하면 최초 조회가 1분 가까이 걸려(§작업이력 실측) 사용성이
+  // 나쁘다. 이제 모델명은 항상 구체적인 모델 하나만 선택하도록 강제한다.
+  el.model.innerHTML = "";
   for (const m of models) {
     const opt = document.createElement("option");
     opt.value = m.id;
@@ -71,13 +78,23 @@ async function onTaskChanged() {
   }
   el.model.disabled = false;
   updateQueryButton();
-  // 이 시점까지는 차트 영역이 갱신되지 않는다 — 오직 [전처리조회] 클릭만 결과를 갱신한다.
+
+  if (models.length > 0) {
+    // <select>는 옵션 채우면 브라우저가 첫 번째를 자동 선택하지만 change 이벤트는 안 뜬다 —
+    // 모델명 선택 시 자동조회 정책과 일관되도록 첫 모델로 명시적 자동조회를 트리거한다.
+    el.model.value = models[0].id;
+    onModelChanged();
+  }
 }
 
 function onModelChanged() {
-  // state만 갱신, API 호출 없음(§0-1-1 리스크 1).
+  // 2026-08-24 변경: 모델명 선택 시 [전처리조회] 버튼 클릭 없이 즉시 자동 조회한다
+  // (기존 §0-1-1 "선택만으로는 API 호출 안 함" 정책을 사용자 요청으로 대체).
   state.model = el.model.value;
   updateSelectedLabel();
+  if (state.task !== "" && !el.btnQuery.disabled) {
+    onQueryClick();
+  }
 }
 
 function updateSelectedLabel() {
@@ -168,26 +185,35 @@ function binLabel(range) {
 }
 
 function renderPreprocessCheck(body) {
+  const labels = body.labels;
+  // 업무마다 축·문구 의미가 달라(산탄데르=만족/불만족, 신용카드=정상/사기) 차트 제목과
+  // 타깃분포 라벨을 응답의 labels로 매번 갱신한다.
+  document.getElementById("targetChartTitle").textContent = "타깃 클래스 불균형 분포";
+  document.getElementById("bin1ChartTitle").textContent = labels.bin1_title;
+  document.getElementById("bin2ChartTitle").textContent = labels.bin2_title;
+  document.getElementById("boxplotTitle").textContent = labels.box_title;
+
+  targetChart.data.labels = [labels.negative, labels.positive];
   targetChart.data.datasets[0].data = [body.target_distribution.satisfied, body.target_distribution.unsatisfied];
   targetChart.update();
 
-  ageRatioChart.data.labels = body.age_unsatisfied_ratio.map((b) => binLabel(b.range));
-  ageRatioChart.data.datasets[0].data = body.age_unsatisfied_ratio.map((b) => b.ratio);
+  ageRatioChart.data.labels = body.bin1_ratio.map((b) => binLabel(b.range));
+  ageRatioChart.data.datasets[0].data = body.bin1_ratio.map((b) => b.ratio);
   ageRatioChart.update();
 
-  balanceRatioChart.data.labels = body.balance_unsatisfied_ratio.map((b) => binLabel(b.range));
-  balanceRatioChart.data.datasets[0].data = body.balance_unsatisfied_ratio.map((b) => b.ratio);
+  balanceRatioChart.data.labels = body.bin2_ratio.map((b) => binLabel(b.range));
+  balanceRatioChart.data.datasets[0].data = body.bin2_ratio.map((b) => b.ratio);
   balanceRatioChart.update();
 
-  renderBoxplot(body.balance_boxplot);
+  renderBoxplot(body.value_boxplot, labels);
 }
 
-function renderBoxplot(box) {
+function renderBoxplot(box, labels) {
   // whisker_low/high(1.5×IQR 표준 수염) 기준으로 축을 잡는다 — saldo_var30처럼 꼬리가
   // 아주 긴 컬럼을 진짜 min/max로 스케일링하면 박스가 실선처럼 눌려 안 보이게 된다.
   const groups = [
-    { key: "satisfied", label: "만족(0)", color: "#2e6de5" },
-    { key: "unsatisfied", label: "불만족(1)", color: "#e5572e" },
+    { key: "satisfied", label: labels.negative, color: "#2e6de5" },
+    { key: "unsatisfied", label: labels.positive, color: "#e5572e" },
   ];
   const allValues = groups.flatMap((g) => [box[g.key].whisker_low, box[g.key].whisker_high]);
   const lo = Math.min(...allValues);

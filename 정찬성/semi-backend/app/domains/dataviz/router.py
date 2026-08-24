@@ -98,6 +98,10 @@ def _validate_task_model(task: str, model: str) -> None:
     if task == "all" and model != "all":
         # §0-1-1 / 가이드요청서 §4: 업무가 '전체'인데 모델을 구체적으로 지정하는 조합은 모순.
         raise HTTPException(status_code=422, detail="업무가 '전체'일 때는 모델을 특정할 수 없습니다")
+    if task != "all" and not registry.task_enabled(task):
+        # 업무명 드롭다운에는 표시되지만(§업무종류.png) 데이터 파이프라인이 아직 없는 업무
+        # (문서 군집화/마켓 가격 예측) — 선택 자체는 유효하니 404가 아니라 409(준비중)로 구분한다.
+        raise HTTPException(status_code=409, detail="아직 준비 중인 업무입니다")
     if task != "all" and not registry.model_exists(task, model):
         raise HTTPException(status_code=404, detail="존재하지 않는 모델입니다")
 
@@ -112,23 +116,34 @@ def models(task: str | None = Query(default=None)) -> list[dict]:
     return registry.get_models(task)
 
 
+def _resolve_task_dataframe(task: str, santander_df: pd.DataFrame, creditcard_df: pd.DataFrame) -> pd.DataFrame:
+    # santander_df/creditcard_df는 항상 Depends로 함께 주입받는다(lru_cache라 두 번째 CSV를
+    # 안 쓰는 요청에서도 비용은 미미하다) — 이래야 테스트가 crud.get_dataframe /
+    # crud.get_creditcard_dataframe을 app.dependency_overrides로 그대로 대체할 수 있다.
+    return creditcard_df if task == "credit_card" else santander_df
+
+
 @router.get("/dataviz/preprocess-check", response_model=PreprocessCheckResponse)
 def preprocess_check(
     task: str = Query(...),
     model: str = Query(default="all"),
-    df: pd.DataFrame = Depends(crud.get_dataframe),
+    santander_df: pd.DataFrame = Depends(crud.get_dataframe),
+    creditcard_df: pd.DataFrame = Depends(crud.get_creditcard_dataframe),
 ) -> dict:
     _validate_task_model(task, model)
-    return service.run_preprocess_check(df)
+    df = _resolve_task_dataframe(task, santander_df, creditcard_df)
+    return service.run_preprocess_check(task, df)
 
 
 @router.get("/dataviz/model-result", response_model=ModelResultResponse)
 def model_result(
     task: str = Query(...),
     model: str = Query(default="all"),
-    df: pd.DataFrame = Depends(crud.get_dataframe),
+    santander_df: pd.DataFrame = Depends(crud.get_dataframe),
+    creditcard_df: pd.DataFrame = Depends(crud.get_creditcard_dataframe),
 ) -> dict:
     _validate_task_model(task, model)
+    df = _resolve_task_dataframe(task, santander_df, creditcard_df)
     if model == "all":
         # §0-1-2 [기본값]: 백엔드는 다중 곡선을 반환할 수 있어야 하지만, 프론트 오버레이는
         # 후속 이터레이션이다(app.js는 curves[0]만 그린다).

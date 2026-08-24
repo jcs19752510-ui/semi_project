@@ -56,6 +56,7 @@ class AgeDistributionResponse(BaseModel):
 class TaskOption(BaseModel):
     id: str
     label: str
+    enabled: bool = True
 
 
 class ModelOption(BaseModel):
@@ -84,16 +85,29 @@ class FiveNumberSummary(BaseModel):
     outlier_count: int
 
 
-class BalanceBoxplot(BaseModel):
+class ValueBoxplot(BaseModel):
     satisfied: FiveNumberSummary
     unsatisfied: FiveNumberSummary
 
 
+class ChartLabels(BaseModel):
+    """업무별로 의미가 달라지는 차트 문구(예: 산탄데르 '만족/불만족' vs 신용카드 '정상/사기').
+    satisfied/unsatisfied 같은 JSON 필드명 자체는 업무 불문 고정 스키마로 유지하고,
+    화면에 실제로 보여줄 한글 라벨만 이 객체로 전달한다."""
+
+    negative: str
+    positive: str
+    bin1_title: str
+    bin2_title: str
+    box_title: str
+
+
 class PreprocessCheckResponse(BaseModel):
     target_distribution: TargetDistributionV2
-    age_unsatisfied_ratio: list[RatioBin]
-    balance_unsatisfied_ratio: list[RatioBin]
-    balance_boxplot: BalanceBoxplot
+    bin1_ratio: list[RatioBin]
+    bin2_ratio: list[RatioBin]
+    value_boxplot: ValueBoxplot
+    labels: ChartLabels
 
 
 class ROCCurve(BaseModel):
