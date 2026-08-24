@@ -14,7 +14,11 @@ class Settings(BaseSettings):
     session_ttl_seconds: int = 3600
 
     santander_csv_path: str = "../santander-customer-satisfaction/train.csv"
-    creditcard_csv_path: str = "../ipynb/data/creditcard.csv"
+    # 원본(ipynb/data/creditcard.csv, 284,807행·144MB)은 .gitignore 대상이고 GitHub
+    # 파일당 100MB 제한도 넘어 배포가 안 된다(§운영오류1·2 장애 원인). ml.py의 대용량
+    # 학습 상한(MAX_TRAIN_ROWS=80,000)과 동일한 random_state=42 계층화 표본을 미리 뽑아
+    # git으로 배포 가능한 semi-backend/data/creditcard_sample.csv를 기본값으로 쓴다.
+    creditcard_csv_path: str = "data/creditcard_sample.csv"
 
 
 @lru_cache
