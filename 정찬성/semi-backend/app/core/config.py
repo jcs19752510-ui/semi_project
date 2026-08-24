@@ -27,6 +27,13 @@ class Settings(BaseSettings):
     # 밑에 51개 원본 그대로(828KB, 용량 문제 없음) 복사해 git 배포 가능하게 만든 경로가 기본값.
     doc_clustering_topics_dir: str = "data/doc_clustering_topics"
 
+    # --- 마켓 가격 예측 대시보드(업무명=04.마켓 가격 예측) ---
+    # 원본(정찬성/ipynb/data/mercari_train.tsv, 1,482,535행·337MB)은 creditcard.csv보다도
+    # 커서 .gitignore 대상이자 GitHub 100MB 제한을 훨씬 넘는다(§운영오류1과 동일 함정).
+    # creditcard_sample.csv와 동일한 방식으로 random_state=42 단순무작위 80,000행 표본을
+    # semi-backend/data/mercari_sample.tsv(18.3MB)로 미리 뽑아 git 배포 가능하게 만들었다.
+    mercari_tsv_path: str = "data/mercari_sample.tsv"
+
 
 @lru_cache
 def get_settings() -> Settings:

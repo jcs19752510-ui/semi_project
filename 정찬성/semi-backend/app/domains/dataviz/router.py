@@ -4,7 +4,7 @@ import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
 
-from app.domains.dataviz import crud, docclustering, ml, registry, service
+from app.domains.dataviz import crud, docclustering, ml, mlreg, registry, service
 from app.domains.dataviz.schemas import (
     AgeDistributionResponse,
     DocClusteringPreprocessResponse,
@@ -14,6 +14,7 @@ from app.domains.dataviz.schemas import (
     PreprocessCheckResponse,
     RecordsResponse,
     RegionOption,
+    RegressionResultResponse,
     SummaryResponse,
     TargetDistributionResponse,
     TaskOption,
@@ -126,6 +127,8 @@ def _dataframe_for_task(task: str) -> pd.DataFrame:
     # 필요한 로더 하나만 호출해 업무 간 장애가 전파되지 않도록 격리한다.
     if task == "credit_card":
         return crud.get_creditcard_dataframe()
+    if task == "market_price":
+        return crud.get_mercari_dataframe()
     return crud.get_dataframe()
 
 
@@ -148,7 +151,10 @@ def preprocess_check(
     return service.run_preprocess_check(task, df)
 
 
-@router.get("/dataviz/model-result", response_model=ModelResultResponse)
+@router.get(
+    "/dataviz/model-result",
+    response_model=ModelResultResponse | RegressionResultResponse,
+)
 def model_result(
     task: str = Query(...),
     model: str = Query(default="all"),
@@ -167,6 +173,13 @@ def model_result(
         # 재사용해 프론트 ROC 차트를 그대로 쓸 수 있게 한다.
         document_df, feature_matrix = docclustering.get_document_corpus()
         curves = [docclustering.compute_model_result(document_df, feature_matrix, m) for m in target_models]
+        return {"curves": curves}
+
+    if task == "market_price":
+        # 회귀 과제라 ROC/AUC 개념이 없다 — RegressionCurve(실제값/예측값 산점도 + RMSLE)로
+        # 계산한다(§mlreg.py).
+        df = crud.get_mercari_dataframe()
+        curves = [mlreg.compute_regression_result(df, m) for m in target_models]
         return {"curves": curves}
 
     df = _dataframe_for_task(task)

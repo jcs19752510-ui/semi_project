@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 from fastapi.testclient import TestClient
 
-from app.domains.dataviz import crud
+from app.domains.dataviz import crud, registry
 from app.main import app
 
 MODEL_IDS = {"logistic_regression", "lightgbm", "xgboost", "random_forest", "gradient_boost"}
@@ -52,8 +52,9 @@ def client() -> TestClient:
 
 
 # TC-DV2-01 (TC-DV1/TC-50)
-# 2026-08-24(2차): 문서 군집화 데이터셋을 확보해 enabled=True로 전환(§docclustering.py).
-# 문서 군집화 전용 케이스는 tests/test_doc_clustering.py로 분리했다.
+# 2026-08-24(2차): 문서 군집화, (3차): 마켓 가격 예측 데이터셋을 확보해 둘 다 enabled=True로
+# 전환 — 이제 4종 업무 전부 실연동됐다(§docclustering.py, §mlreg.py). 문서 군집화/마켓
+# 가격 예측 전용 케이스는 각각 tests/test_doc_clustering.py, tests/test_market_price.py로 분리했다.
 def test_tasks(client: TestClient) -> None:
     res = client.get("/dataviz/tasks")
     assert res.status_code == 200
@@ -62,7 +63,7 @@ def test_tasks(client: TestClient) -> None:
         {"id": "santander", "label": "01 산탄데르", "enabled": True},
         {"id": "credit_card", "label": "02 신용카드", "enabled": True},
         {"id": "doc_clustering", "label": "03 문서 군집화", "enabled": True},
-        {"id": "market_price", "label": "04 마켓 가격 예측", "enabled": False},
+        {"id": "market_price", "label": "04 마켓 가격 예측", "enabled": True},
     ]
 
 
@@ -89,8 +90,23 @@ def test_models_for_doc_clustering_task_same_catalog(client: TestClient) -> None
     assert {m["id"] for m in res.json()} == MODEL_IDS
 
 
-def test_models_for_disabled_task_is_empty(client: TestClient) -> None:
+def test_models_for_market_price_task_regression_labels(client: TestClient) -> None:
+    # 2026-08-24(3차): 마켓 가격 예측은 회귀 과제라 id는 동일(logistic_regression 등)하되
+    # 표시 라벨만 "선형회귀(Ridge)"로 바뀐 전용 카탈로그를 쓴다(§registry.REGRESSION_MODEL_CATALOG).
     res = client.get("/dataviz/models", params={"task": "market_price"})
+    assert res.status_code == 200
+    body = res.json()
+    assert {m["id"] for m in body} == MODEL_IDS
+    assert {"id": "logistic_regression", "label": "선형회귀(Ridge)"} in body
+    assert {"id": "logistic_regression", "label": "로지스틱 회귀"} not in body
+
+
+def test_models_for_unknown_task_is_empty(client: TestClient) -> None:
+    # 4종 업무가 전부 실연동돼(§test_tasks) 지금은 실제로 비활성 상태인 업무가 없다 —
+    # registry.get_models()가 "카탈로그에 없는 task_id에는 빈 목록을 반환한다"는 동작 자체는
+    # 특정 업무의 현재 진행 상태와 무관하게 유지되어야 하므로, /models는 검증(404) 없이
+    # 존재하지 않는 task_id를 그대로 조회해도 빈 목록으로 안전하게 응답해야 한다.
+    res = client.get("/dataviz/models", params={"task": "__unknown_task_for_test__"})
     assert res.status_code == 200
     assert res.json() == []
 
@@ -211,11 +227,16 @@ def test_santander_unaffected_when_creditcard_csv_missing(
     assert res2.status_code == 200
 
 
-# 2026-08-24 추가: 마켓 가격 예측은 드롭다운에는 보이지만(§업무종류.png) 데이터 파이프라인이
-# 없어 선택 시 409(준비중)로 명확히 구분된다(404=존재하지 않음과 다름). 문서 군집화는
-# 2026-08-24(2차)에 데이터셋을 확보해 이 카테고리에서 빠졌다(§test_doc_clustering.py).
-def test_preprocess_check_disabled_task_is_409(client: TestClient) -> None:
-    res = client.get("/dataviz/preprocess-check", params={"task": "market_price", "model": "all"})
+# 2026-08-24(3차): 마켓 가격 예측까지 실연동되며(§registry.TASKS) 4종 업무가 전부
+# enabled=True가 됐다 — 지금은 실제로 "준비중"인 업무가 없다(문서 군집화는 2026-08-24(2차)에,
+# 마켓 가격 예측은 이번 라운드에 이 카테고리에서 빠졌다). 이 409 분기 자체는 다음에 신규
+# 업무명이 "표시만 되고 준비중"으로 추가될 때 다시 쓰일 코드라 남겨두되, 검증은 registry.TASKS에
+# 가짜 비활성 업무를 하나 끼워 넣어 동작을 직접 확인한다.
+def test_preprocess_check_disabled_task_is_409(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_tasks = registry.TASKS + [{"id": "__disabled_task_for_test__", "label": "테스트용 준비중 업무", "enabled": False}]
+    monkeypatch.setattr(registry, "TASKS", fake_tasks)
+
+    res = client.get("/dataviz/preprocess-check", params={"task": "__disabled_task_for_test__", "model": "all"})
     assert res.status_code == 409
 
 

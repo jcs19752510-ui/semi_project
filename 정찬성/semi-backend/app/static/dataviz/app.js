@@ -114,6 +114,7 @@ function updateQueryButton() {
 const CLUSTER_COLORS = ["#2e6de5", "#e5572e", "#2e8b57", "#8e44ad", "#f1a208"];
 
 let targetChart, ageRatioChart, balanceRatioChart, rocChart;
+let rocChartMode = "roc"; // "roc"(ROC 곡선, 이진·다중클래스 공용) | "regression"(실제값 vs 예측값 산점도)
 
 function initCharts() {
   targetChart = new Chart(document.getElementById("targetChart"), {
@@ -151,7 +152,18 @@ function initCharts() {
     },
   });
 
-  rocChart = new Chart(document.getElementById("rocChart"), {
+  rocChart = createRocLineChart();
+  rocChartMode = "roc";
+}
+
+// ── "모델 수행결과" 패널의 캔버스(id=rocChart) 하나를 업무 성격에 따라 두 가지 모드로 쓴다.
+// santander/credit_card/doc_clustering(이진·다중클래스 macro-OvR)은 ROC 라인차트,
+// market_price(회귀)는 실제값 vs 예측값 산점도(scatter) — Chart.js는 기존 인스턴스의
+// type을 그냥 바꿔치기하는 걸 신뢰할 수 없어(내부 컨트롤러가 type별로 다름) 모드가
+// 바뀔 때만 destroy 후 재생성한다.
+
+function createRocLineChart() {
+  return new Chart(document.getElementById("rocChart"), {
     type: "line",
     data: {
       datasets: [
@@ -185,6 +197,46 @@ function initCharts() {
       },
     },
   });
+}
+
+function createRegressionScatterChart() {
+  return new Chart(document.getElementById("rocChart"), {
+    type: "scatter",
+    data: {
+      datasets: [
+        {
+          label: "예측 결과",
+          data: [],
+          backgroundColor: "rgba(46,109,229,0.55)",
+          pointRadius: 3,
+        },
+        {
+          label: "완벽예측 기준선",
+          data: [],
+          type: "line",
+          borderColor: "#c7cbd1",
+          borderDash: [4, 4],
+          pointRadius: 0,
+          borderWidth: 1,
+          showLine: true,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: { title: { display: true, text: "실제 가격($)" } },
+        y: { title: { display: true, text: "예측 가격($)" } },
+      },
+    },
+  });
+}
+
+function ensureRocChartMode(mode) {
+  if (rocChartMode === mode) return;
+  rocChart.destroy();
+  rocChart = mode === "regression" ? createRegressionScatterChart() : createRocLineChart();
+  rocChartMode = mode;
 }
 
 function binLabel(range) {
@@ -315,6 +367,8 @@ function renderModelResult(body) {
   const curve = body.curves[0];
   if (!curve) return;
 
+  ensureRocChartMode("roc");
+
   // 문서 군집화는 타깃이 다중클래스라 ROC가 "macro One-vs-Rest 평균"이라는 점을
   // 제목에 명시한다(산탄데르/신용카드는 이진이라 표준 ROC 그대로).
   document.getElementById("rocChartTitle").textContent =
@@ -324,6 +378,30 @@ function renderModelResult(body) {
   rocChart.data.datasets[0].label = `${curve.label} ROC`;
   rocChart.update();
   el.aucLabel.textContent = `AUC = ${curve.auc.toFixed(4)} (${curve.label})`;
+}
+
+// ── 마켓 가격 예측(market_price) 전용 렌더링 — 회귀 과제라 ROC/AUC 개념이 없다.
+// "실제값 vs 예측값" 산점도 + RMSLE로 모델 품질을 보여준다(§schemas.RegressionCurve).
+function renderRegressionResult(body) {
+  const curve = body.curves[0];
+  if (!curve) return;
+
+  ensureRocChartMode("regression");
+  document.getElementById("rocChartTitle").textContent = "실제 가격 vs 예측 가격 산점도";
+
+  rocChart.data.datasets[0].data = curve.actual.map((x, i) => ({ x, y: curve.predicted[i] }));
+  rocChart.data.datasets[0].label = `${curve.label} 예측`;
+
+  const allValues = [...curve.actual, ...curve.predicted];
+  const lo = Math.min(0, ...allValues);
+  const hi = Math.max(...allValues, 1);
+  rocChart.data.datasets[1].data = [
+    { x: lo, y: lo },
+    { x: hi, y: hi },
+  ];
+  rocChart.update();
+
+  el.aucLabel.textContent = `RMSLE = ${curve.rmsle.toFixed(4)} · R² = ${curve.r2.toFixed(4)} (${curve.label})`;
 }
 
 // ── 전처리조회 버튼: 유일하게 결과 API를 호출하는 트리거 ──────────────────
@@ -356,7 +434,11 @@ async function onQueryClick() {
     errors.push(`전처리검증: ${preprocessResult.reason.message}`);
   }
   if (modelResultResult.status === "fulfilled") {
-    renderModelResult(modelResultResult.value);
+    if (task === "market_price") {
+      renderRegressionResult(modelResultResult.value);
+    } else {
+      renderModelResult(modelResultResult.value);
+    }
   } else {
     console.error(modelResultResult.reason);
     errors.push(`모델결과: ${modelResultResult.reason.message}`);

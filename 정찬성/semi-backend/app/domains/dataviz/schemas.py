@@ -122,6 +122,26 @@ class ModelResultResponse(BaseModel):
     curves: list[ROCCurve]
 
 
+# ── 마켓 가격 예측(04. 마켓 가격 예측, market_price) 전용 모델 수행결과 응답 ───────────
+#
+# 회귀(연속값 가격 예측) 과제라 ROC/AUC 개념 자체가 없다. 대신 회귀 진단의 표준 방식인
+# "실제값 vs 예측값 산점도" + RMSLE(원본 노트북이 채택한 평가지표)를 반환한다.
+# 전처리검증 4종은 shipping(0/1)이 실제 이진 컬럼이라 기존 PreprocessCheckResponse를
+# 그대로 재사용하지만(§crud.DOMAIN_CHARTS), 모델 수행결과만큼은 ROCCurve로 표현할 수
+# 없어 이 전용 스키마를 별도로 둔다.
+class RegressionCurve(BaseModel):
+    model: str
+    label: str
+    rmsle: float
+    r2: float
+    actual: list[float]
+    predicted: list[float]
+
+
+class RegressionResultResponse(BaseModel):
+    curves: list[RegressionCurve]
+
+
 # ── 문서 군집화(03. 문서 군집화, doc_clustering) 전용 응답 ─────────────────────
 #
 # 산탄데르/신용카드는 "이진 타깃(0/1) 불균형 분포"가 자연스럽지만, 문서 군집화는

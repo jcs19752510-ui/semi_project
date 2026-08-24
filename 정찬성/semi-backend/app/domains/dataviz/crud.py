@@ -40,6 +40,21 @@ def get_creditcard_dataframe() -> pd.DataFrame:
     return load_creditcard_dataframe()
 
 
+@lru_cache
+def load_mercari_dataframe() -> pd.DataFrame:
+    """캐글 Mercari Price Suggestion 원본 TSV(표본 80,000행). shipping(0/1)이 실제로
+    이진 컬럼이라 DOMAIN_CHARTS의 기존 이진 비교 파이프라인(target_col/bin/box)을
+    그대로 재사용할 수 있다 — price/item_condition_id는 원본 스케일 그대로 둔다
+    (로그변환은 mlreg.py의 모델 학습 내부에서만 적용, 화면 차트는 원본 달러 스케일 유지)."""
+    settings = get_settings()
+    return pd.read_csv(settings.mercari_tsv_path, sep="\t")
+
+
+def get_mercari_dataframe() -> pd.DataFrame:
+    """FastAPI Depends용 진입점. 테스트에서는 이 함수를 override해 작은 표본으로 대체한다."""
+    return load_mercari_dataframe()
+
+
 def apply_filters(
     df: pd.DataFrame,
     target: int | None = None,
@@ -159,6 +174,21 @@ DOMAIN_CHARTS: dict[str, dict] = {
         "bin2_title": "거래금액 구간별 사기 비율",
         "box_col": "Amount",
         "box_title": "거래금액(Amount) 사기여부별 비교",
+    },
+    # 2026-08-24(3차): 마켓 가격 예측은 회귀 과제라 "만족/불만족" 같은 인위적 이진 타깃이
+    # 없지만, shipping(배송비 부담 주체)이 원본 데이터에 실제로 존재하는 이진(0/1) 컬럼이라
+    # 이를 target_col로 삼아 기존 이진 비교 파이프라인을 그대로 재사용한다 — "가격이 무료배송
+    # 여부에 따라 어떻게 다른가"는 실제로 의미 있는 탐색 질문이기도 하다.
+    "market_price": {
+        "target_col": "shipping",
+        "negative_label": "배송비 구매자부담(0)",
+        "positive_label": "무료배송·판매자부담(1)",
+        "bin1_col": "price",
+        "bin1_title": "가격 구간별 무료배송 비율",
+        "bin2_col": "item_condition_id",
+        "bin2_title": "상품상태 구간별 무료배송 비율",
+        "box_col": "price",
+        "box_title": "가격(원본, $) 배송비 부담별 비교",
     },
 }
 
