@@ -116,22 +116,25 @@ def models(task: str | None = Query(default=None)) -> list[dict]:
     return registry.get_models(task)
 
 
-def _resolve_task_dataframe(task: str, santander_df: pd.DataFrame, creditcard_df: pd.DataFrame) -> pd.DataFrame:
-    # santander_df/creditcard_df는 항상 Depends로 함께 주입받는다(lru_cache라 두 번째 CSV를
-    # 안 쓰는 요청에서도 비용은 미미하다) — 이래야 테스트가 crud.get_dataframe /
-    # crud.get_creditcard_dataframe을 app.dependency_overrides로 그대로 대체할 수 있다.
-    return creditcard_df if task == "credit_card" else santander_df
+def _dataframe_for_task(task: str) -> pd.DataFrame:
+    # 2026-08-24 수정: task별로 필요한 CSV만 그때그때 로드한다. 이전에는 santander_df/
+    # creditcard_df를 둘 다 Depends로 항상 주입받았는데, 그러면 task=santander 요청에서도
+    # creditcard.csv를 매번 로드 시도하게 된다 — 운영(Render)에는 creditcard.csv가 아예
+    # 배포돼 있지 않아(§ .gitignore로 제외, 144MB로 GitHub 100MB 제한 초과) 산탄데르
+    # 요청까지 전부 500으로 죽는 실장애가 있었다(운영오류1.png). task를 먼저 보고 실제로
+    # 필요한 로더 하나만 호출해 업무 간 장애가 전파되지 않도록 격리한다.
+    if task == "credit_card":
+        return crud.get_creditcard_dataframe()
+    return crud.get_dataframe()
 
 
 @router.get("/dataviz/preprocess-check", response_model=PreprocessCheckResponse)
 def preprocess_check(
     task: str = Query(...),
     model: str = Query(default="all"),
-    santander_df: pd.DataFrame = Depends(crud.get_dataframe),
-    creditcard_df: pd.DataFrame = Depends(crud.get_creditcard_dataframe),
 ) -> dict:
     _validate_task_model(task, model)
-    df = _resolve_task_dataframe(task, santander_df, creditcard_df)
+    df = _dataframe_for_task(task)
     return service.run_preprocess_check(task, df)
 
 
@@ -139,11 +142,9 @@ def preprocess_check(
 def model_result(
     task: str = Query(...),
     model: str = Query(default="all"),
-    santander_df: pd.DataFrame = Depends(crud.get_dataframe),
-    creditcard_df: pd.DataFrame = Depends(crud.get_creditcard_dataframe),
 ) -> dict:
     _validate_task_model(task, model)
-    df = _resolve_task_dataframe(task, santander_df, creditcard_df)
+    df = _dataframe_for_task(task)
     if model == "all":
         # §0-1-2 [기본값]: 백엔드는 다중 곡선을 반환할 수 있어야 하지만, 프론트 오버레이는
         # 후속 이터레이션이다(app.js는 curves[0]만 그린다).

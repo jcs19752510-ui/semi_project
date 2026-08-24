@@ -9,7 +9,7 @@ MODEL_IDS = {"logistic_regression", "lightgbm", "xgboost", "random_forest", "gra
 
 
 @pytest.fixture(autouse=True)
-def sample_dataframe():
+def sample_dataframe(monkeypatch: pytest.MonkeyPatch):
     df = pd.DataFrame(
         {
             "ID": [1, 2, 3, 4, 5],
@@ -20,13 +20,19 @@ def sample_dataframe():
             "TARGET": [0, 0, 1, 0, 1],
         }
     )
+    # v1 엔드포인트(summary/regions/records/chart/*)는 여전히 Depends(crud.get_dataframe)라
+    # dependency_overrides로도 잡히지만, v2 엔드포인트(preprocess-check/model-result)는
+    # router._dataframe_for_task가 crud.get_dataframe()을 직접 호출하므로(§ 운영 장애 수정 —
+    # santander 요청이 creditcard.csv 로딩 실패에 발목 잡히지 않도록 task별 지연 로딩으로
+    # 바꿨다) monkeypatch로 모듈 속성 자체를 바꿔야 두 경로 모두 잡힌다.
     app.dependency_overrides[crud.get_dataframe] = lambda: df
+    monkeypatch.setattr(crud, "get_dataframe", lambda: df)
     yield df
     app.dependency_overrides.pop(crud.get_dataframe, None)
 
 
 @pytest.fixture(autouse=True)
-def sample_creditcard_dataframe():
+def sample_creditcard_dataframe(monkeypatch: pytest.MonkeyPatch):
     # V1 하나만 있어도 되는 소표본이 아니라, ml.FEATURE_COLUMNS["credit_card"](V1~V28+Amount)를
     # 전부 채워야 model-result 엔드포인트가 실제로 학습·평가를 수행할 수 있다.
     rows = 6
@@ -36,9 +42,8 @@ def sample_creditcard_dataframe():
     data["Amount"] = [10.0, 20.0, 5000.0, 15.0, 30.0, 4000.0]
     data["Class"] = [0, 0, 1, 0, 0, 1]
     df = pd.DataFrame(data)
-    app.dependency_overrides[crud.get_creditcard_dataframe] = lambda: df
+    monkeypatch.setattr(crud, "get_creditcard_dataframe", lambda: df)
     yield df
-    app.dependency_overrides.pop(crud.get_creditcard_dataframe, None)
 
 
 @pytest.fixture
@@ -176,6 +181,25 @@ def test_credit_card_model_result_all_models(client: TestClient) -> None:
     assert {c["model"] for c in curves} == MODEL_IDS
     for c in curves:
         assert 0.0 <= c["auc"] <= 1.0
+
+
+# 2026-08-24 회귀 테스트 — 운영 장애 재현/수정 검증: creditcard.csv가 없는 환경(Render처럼
+# 해당 CSV가 배포되지 않은 경우, §운영오류1.png)에서도 task=santander 요청은 영향받지
+# 않아야 한다. router가 santander_df/creditcard_df를 항상 함께 Depends로 주입받던 예전
+# 구조에서는 이 테스트가 실패했다(creditcard 로더 예외가 santander 요청까지 500으로 만듦).
+def test_santander_unaffected_when_creditcard_csv_missing(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def _boom():
+        raise FileNotFoundError("[Errno 2] No such file or directory: '../ipynb/data/creditcard.csv'")
+
+    monkeypatch.setattr(crud, "get_creditcard_dataframe", _boom)
+
+    res1 = client.get("/dataviz/preprocess-check", params={"task": "santander", "model": "lightgbm"})
+    assert res1.status_code == 200
+
+    res2 = client.get("/dataviz/model-result", params={"task": "santander", "model": "lightgbm"})
+    assert res2.status_code == 200
 
 
 # 2026-08-24 추가: 문서 군집화/마켓 가격 예측은 드롭다운에는 보이지만(§업무종류.png)
