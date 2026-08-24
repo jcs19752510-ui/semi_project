@@ -1,17 +1,21 @@
 from pathlib import Path
 
 import pandas as pd
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
 
-from app.domains.dataviz import crud
+from app.domains.dataviz import crud, ml, registry, service
 from app.domains.dataviz.schemas import (
     AgeDistributionResponse,
     HistogramResponse,
+    ModelOption,
+    ModelResultResponse,
+    PreprocessCheckResponse,
     RecordsResponse,
     RegionOption,
     SummaryResponse,
     TargetDistributionResponse,
+    TaskOption,
 )
 
 router = APIRouter(tags=["dataviz"])
@@ -83,3 +87,53 @@ def age_distribution(
     # target 필터는 받지 않는다 — 만족/불만족 두 분포를 겹쳐서 비교하는 게 이 차트의 목적.
     filtered = crud.apply_filters(df, region=region)
     return crud.get_age_distribution(filtered, bins=bins)
+
+
+# ── v2(업무/모델 선택형, TRD 99-02) ──────────────────────────────────────
+
+
+def _validate_task_model(task: str, model: str) -> None:
+    if not registry.task_exists(task):
+        raise HTTPException(status_code=404, detail="존재하지 않는 업무입니다")
+    if task == "all" and model != "all":
+        # §0-1-1 / 가이드요청서 §4: 업무가 '전체'인데 모델을 구체적으로 지정하는 조합은 모순.
+        raise HTTPException(status_code=422, detail="업무가 '전체'일 때는 모델을 특정할 수 없습니다")
+    if task != "all" and not registry.model_exists(task, model):
+        raise HTTPException(status_code=404, detail="존재하지 않는 모델입니다")
+
+
+@router.get("/dataviz/tasks", response_model=list[TaskOption])
+def tasks() -> list[dict]:
+    return registry.get_tasks()
+
+
+@router.get("/dataviz/models", response_model=list[ModelOption])
+def models(task: str | None = Query(default=None)) -> list[dict]:
+    return registry.get_models(task)
+
+
+@router.get("/dataviz/preprocess-check", response_model=PreprocessCheckResponse)
+def preprocess_check(
+    task: str = Query(...),
+    model: str = Query(default="all"),
+    df: pd.DataFrame = Depends(crud.get_dataframe),
+) -> dict:
+    _validate_task_model(task, model)
+    return service.run_preprocess_check(df)
+
+
+@router.get("/dataviz/model-result", response_model=ModelResultResponse)
+def model_result(
+    task: str = Query(...),
+    model: str = Query(default="all"),
+    df: pd.DataFrame = Depends(crud.get_dataframe),
+) -> dict:
+    _validate_task_model(task, model)
+    if model == "all":
+        # §0-1-2 [기본값]: 백엔드는 다중 곡선을 반환할 수 있어야 하지만, 프론트 오버레이는
+        # 후속 이터레이션이다(app.js는 curves[0]만 그린다).
+        target_models = [m["id"] for m in registry.get_models(task)]
+    else:
+        target_models = [model]
+    curves = [ml.compute_roc_curve(df, task, m) for m in target_models]
+    return {"curves": curves}
