@@ -1,0 +1,15 @@
+# --- Santander Customer Transaction Prediction 데이터 차단 ---
+# 1. 폴더 단위로 관리하는 경우 (예: santander/, data/santander 등)
+santander/
+*/santander/
+data/santander/
+
+# 2. 산탄데르 CSV 파일 직접 지정 (파일명 기준)
+train.csv
+test.csv
+sample_submission.csv
+
+# 3. 압축 파일 형태 (zip, gz 등)
+*.zip
+*.gz
+*.rar
