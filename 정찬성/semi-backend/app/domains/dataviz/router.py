@@ -4,15 +4,17 @@ import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
 
-from app.domains.dataviz import crud, ml, registry, service
+from app.domains.dataviz import crud, docclustering, ml, mlreg, registry, service
 from app.domains.dataviz.schemas import (
     AgeDistributionResponse,
+    DocClusteringPreprocessResponse,
     HistogramResponse,
     ModelOption,
     ModelResultResponse,
     PreprocessCheckResponse,
     RecordsResponse,
     RegionOption,
+    RegressionResultResponse,
     SummaryResponse,
     TargetDistributionResponse,
     TaskOption,
@@ -98,6 +100,10 @@ def _validate_task_model(task: str, model: str) -> None:
     if task == "all" and model != "all":
         # §0-1-1 / 가이드요청서 §4: 업무가 '전체'인데 모델을 구체적으로 지정하는 조합은 모순.
         raise HTTPException(status_code=422, detail="업무가 '전체'일 때는 모델을 특정할 수 없습니다")
+    if task != "all" and not registry.task_enabled(task):
+        # 업무명 드롭다운에는 표시되지만(§업무종류.png) 데이터 파이프라인이 아직 없는 업무
+        # (문서 군집화/마켓 가격 예측) — 선택 자체는 유효하니 404가 아니라 409(준비중)로 구분한다.
+        raise HTTPException(status_code=409, detail="아직 준비 중인 업무입니다")
     if task != "all" and not registry.model_exists(task, model):
         raise HTTPException(status_code=404, detail="존재하지 않는 모델입니다")
 
@@ -112,21 +118,46 @@ def models(task: str | None = Query(default=None)) -> list[dict]:
     return registry.get_models(task)
 
 
-@router.get("/dataviz/preprocess-check", response_model=PreprocessCheckResponse)
+def _dataframe_for_task(task: str) -> pd.DataFrame:
+    # 2026-08-24 수정: task별로 필요한 CSV만 그때그때 로드한다. 이전에는 santander_df/
+    # creditcard_df를 둘 다 Depends로 항상 주입받았는데, 그러면 task=santander 요청에서도
+    # creditcard.csv를 매번 로드 시도하게 된다 — 운영(Render)에는 creditcard.csv가 아예
+    # 배포돼 있지 않아(§ .gitignore로 제외, 144MB로 GitHub 100MB 제한 초과) 산탄데르
+    # 요청까지 전부 500으로 죽는 실장애가 있었다(운영오류1.png). task를 먼저 보고 실제로
+    # 필요한 로더 하나만 호출해 업무 간 장애가 전파되지 않도록 격리한다.
+    if task == "credit_card":
+        return crud.get_creditcard_dataframe()
+    if task == "market_price":
+        return crud.get_mercari_dataframe()
+    return crud.get_dataframe()
+
+
+@router.get(
+    "/dataviz/preprocess-check",
+    response_model=PreprocessCheckResponse | DocClusteringPreprocessResponse,
+)
 def preprocess_check(
     task: str = Query(...),
     model: str = Query(default="all"),
-    df: pd.DataFrame = Depends(crud.get_dataframe),
 ) -> dict:
     _validate_task_model(task, model)
-    return service.run_preprocess_check(df)
+    if task == "doc_clustering":
+        # 문서 군집화는 지도학습 이진 타깃이 없는 비지도 업무라(§docclustering.py 모듈
+        # docstring) santander/credit_card와 응답 스키마 자체가 다르다 — service.py의
+        # DOMAIN_CHARTS 이진 파이프라인 대신 이 업무 전용 경로를 탄다.
+        document_df, _ = docclustering.get_document_corpus()
+        return docclustering.run_preprocess_check(document_df)
+    df = _dataframe_for_task(task)
+    return service.run_preprocess_check(task, df)
 
 
-@router.get("/dataviz/model-result", response_model=ModelResultResponse)
+@router.get(
+    "/dataviz/model-result",
+    response_model=ModelResultResponse | RegressionResultResponse,
+)
 def model_result(
     task: str = Query(...),
     model: str = Query(default="all"),
-    df: pd.DataFrame = Depends(crud.get_dataframe),
 ) -> dict:
     _validate_task_model(task, model)
     if model == "all":
@@ -135,5 +166,22 @@ def model_result(
         target_models = [m["id"] for m in registry.get_models(task)]
     else:
         target_models = [model]
+
+    if task == "doc_clustering":
+        # 타깃이 다중클래스(카테고리)라 ROC/AUC는 macro One-vs-Rest 평균으로 계산하되
+        # (§docclustering.py), 응답 스키마(ROCCurve)는 santander/credit_card와 동일하게
+        # 재사용해 프론트 ROC 차트를 그대로 쓸 수 있게 한다.
+        document_df, feature_matrix = docclustering.get_document_corpus()
+        curves = [docclustering.compute_model_result(document_df, feature_matrix, m) for m in target_models]
+        return {"curves": curves}
+
+    if task == "market_price":
+        # 회귀 과제라 ROC/AUC 개념이 없다 — RegressionCurve(실제값/예측값 산점도 + RMSLE)로
+        # 계산한다(§mlreg.py).
+        df = crud.get_mercari_dataframe()
+        curves = [mlreg.compute_regression_result(df, m) for m in target_models]
+        return {"curves": curves}
+
+    df = _dataframe_for_task(task)
     curves = [ml.compute_roc_curve(df, task, m) for m in target_models]
     return {"curves": curves}

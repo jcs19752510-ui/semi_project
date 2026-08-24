@@ -2,12 +2,14 @@ import pandas as pd
 import pytest
 from fastapi.testclient import TestClient
 
-from app.domains.dataviz import crud
+from app.domains.dataviz import crud, registry
 from app.main import app
+
+MODEL_IDS = {"logistic_regression", "lightgbm", "xgboost", "random_forest", "gradient_boost"}
 
 
 @pytest.fixture(autouse=True)
-def sample_dataframe():
+def sample_dataframe(monkeypatch: pytest.MonkeyPatch):
     df = pd.DataFrame(
         {
             "ID": [1, 2, 3, 4, 5],
@@ -18,9 +20,30 @@ def sample_dataframe():
             "TARGET": [0, 0, 1, 0, 1],
         }
     )
+    # v1 엔드포인트(summary/regions/records/chart/*)는 여전히 Depends(crud.get_dataframe)라
+    # dependency_overrides로도 잡히지만, v2 엔드포인트(preprocess-check/model-result)는
+    # router._dataframe_for_task가 crud.get_dataframe()을 직접 호출하므로(§ 운영 장애 수정 —
+    # santander 요청이 creditcard.csv 로딩 실패에 발목 잡히지 않도록 task별 지연 로딩으로
+    # 바꿨다) monkeypatch로 모듈 속성 자체를 바꿔야 두 경로 모두 잡힌다.
     app.dependency_overrides[crud.get_dataframe] = lambda: df
+    monkeypatch.setattr(crud, "get_dataframe", lambda: df)
     yield df
     app.dependency_overrides.pop(crud.get_dataframe, None)
+
+
+@pytest.fixture(autouse=True)
+def sample_creditcard_dataframe(monkeypatch: pytest.MonkeyPatch):
+    # V1 하나만 있어도 되는 소표본이 아니라, ml.FEATURE_COLUMNS["credit_card"](V1~V28+Amount)를
+    # 전부 채워야 model-result 엔드포인트가 실제로 학습·평가를 수행할 수 있다.
+    rows = 6
+    data = {"Time": [0, 1, 2, 3, 4, 5]}
+    for i in range(1, 29):
+        data[f"V{i}"] = [float(i + r) for r in range(rows)]
+    data["Amount"] = [10.0, 20.0, 5000.0, 15.0, 30.0, 4000.0]
+    data["Class"] = [0, 0, 1, 0, 0, 1]
+    df = pd.DataFrame(data)
+    monkeypatch.setattr(crud, "get_creditcard_dataframe", lambda: df)
+    yield df
 
 
 @pytest.fixture
@@ -29,10 +52,19 @@ def client() -> TestClient:
 
 
 # TC-DV2-01 (TC-DV1/TC-50)
+# 2026-08-24(2차): 문서 군집화, (3차): 마켓 가격 예측 데이터셋을 확보해 둘 다 enabled=True로
+# 전환 — 이제 4종 업무 전부 실연동됐다(§docclustering.py, §mlreg.py). 문서 군집화/마켓
+# 가격 예측 전용 케이스는 각각 tests/test_doc_clustering.py, tests/test_market_price.py로 분리했다.
 def test_tasks(client: TestClient) -> None:
     res = client.get("/dataviz/tasks")
     assert res.status_code == 200
-    assert res.json() == [{"id": "santander", "label": "1.산탄데르"}]
+    body = res.json()
+    assert body == [
+        {"id": "santander", "label": "01 산탄데르", "enabled": True},
+        {"id": "credit_card", "label": "02 신용카드", "enabled": True},
+        {"id": "doc_clustering", "label": "03 문서 군집화", "enabled": True},
+        {"id": "market_price", "label": "04 마켓 가격 예측", "enabled": True},
+    ]
 
 
 # TC-DV2-02 (TC-DV2/TC-51)
@@ -40,7 +72,43 @@ def test_models_with_task(client: TestClient) -> None:
     res = client.get("/dataviz/models", params={"task": "santander"})
     assert res.status_code == 200
     body = res.json()
-    assert {"id": "lightgbm", "label": "1.lightGBM"} in body
+    assert {m["id"] for m in body} == MODEL_IDS
+    assert {"id": "lightgbm", "label": "LightGBM"} in body
+    assert {"id": "logistic_regression", "label": "로지스틱 회귀"} in body
+
+
+def test_models_for_credit_card_task_same_catalog(client: TestClient) -> None:
+    res = client.get("/dataviz/models", params={"task": "credit_card"})
+    assert res.status_code == 200
+    assert {m["id"] for m in res.json()} == MODEL_IDS
+
+
+def test_models_for_doc_clustering_task_same_catalog(client: TestClient) -> None:
+    # 2026-08-24(2차): 문서 군집화도 5종 분류기 카탈로그를 그대로 재사용한다(§registry.MODELS).
+    res = client.get("/dataviz/models", params={"task": "doc_clustering"})
+    assert res.status_code == 200
+    assert {m["id"] for m in res.json()} == MODEL_IDS
+
+
+def test_models_for_market_price_task_regression_labels(client: TestClient) -> None:
+    # 2026-08-24(3차): 마켓 가격 예측은 회귀 과제라 id는 동일(logistic_regression 등)하되
+    # 표시 라벨만 "선형회귀(Ridge)"로 바뀐 전용 카탈로그를 쓴다(§registry.REGRESSION_MODEL_CATALOG).
+    res = client.get("/dataviz/models", params={"task": "market_price"})
+    assert res.status_code == 200
+    body = res.json()
+    assert {m["id"] for m in body} == MODEL_IDS
+    assert {"id": "logistic_regression", "label": "선형회귀(Ridge)"} in body
+    assert {"id": "logistic_regression", "label": "로지스틱 회귀"} not in body
+
+
+def test_models_for_unknown_task_is_empty(client: TestClient) -> None:
+    # 4종 업무가 전부 실연동돼(§test_tasks) 지금은 실제로 비활성 상태인 업무가 없다 —
+    # registry.get_models()가 "카탈로그에 없는 task_id에는 빈 목록을 반환한다"는 동작 자체는
+    # 특정 업무의 현재 진행 상태와 무관하게 유지되어야 하므로, /models는 검증(404) 없이
+    # 존재하지 않는 task_id를 그대로 조회해도 빈 목록으로 안전하게 응답해야 한다.
+    res = client.get("/dataviz/models", params={"task": "__unknown_task_for_test__"})
+    assert res.status_code == 200
+    assert res.json() == []
 
 
 # TC-DV2-03 (TC-52) — AC-DV2-01
@@ -59,23 +127,30 @@ def test_preprocess_check_target_distribution(client: TestClient) -> None:
     assert dist["satisfied"] + dist["unsatisfied"] == 5
     assert dist["satisfied"] == 3
     assert dist["unsatisfied"] == 2
+    assert body["labels"] == {
+        "negative": "만족(0)",
+        "positive": "불만족(1)",
+        "bin1_title": "연령 구간별 불만족 고객 비율",
+        "bin2_title": "계좌잔고 구간별 불만족 고객 비율",
+        "box_title": "계좌잔고(saldo_var30) 만족여부별 비교",
+    }
 
 
 # TC-DV2-05 (TC-DV4)
-def test_preprocess_check_age_ratio_bins(client: TestClient) -> None:
+def test_preprocess_check_bin1_ratio(client: TestClient) -> None:
     res = client.get("/dataviz/preprocess-check", params={"task": "santander", "model": "lightgbm"})
     assert res.status_code == 200
-    bins = res.json()["age_unsatisfied_ratio"]
+    bins = res.json()["bin1_ratio"]
     assert len(bins) >= 1
     for b in bins:
         assert 0.0 <= b["ratio"] <= 100.0
 
 
 # TC-DV2-06 (TC-DV5)
-def test_preprocess_check_balance_boxplot_five_number_summary(client: TestClient) -> None:
+def test_preprocess_check_value_boxplot_five_number_summary(client: TestClient) -> None:
     res = client.get("/dataviz/preprocess-check", params={"task": "santander", "model": "lightgbm"})
     assert res.status_code == 200
-    box = res.json()["balance_boxplot"]
+    box = res.json()["value_boxplot"]
     for group in ("satisfied", "unsatisfied"):
         summary = box[group]
         assert set(summary.keys()) == {
@@ -108,8 +183,61 @@ def test_model_result_all_models(client: TestClient) -> None:
     res = client.get("/dataviz/model-result", params={"task": "santander", "model": "all"})
     assert res.status_code == 200
     curves = res.json()["curves"]
-    assert len(curves) == 2  # registry에 등록된 모델(lightgbm, random_forest) 수만큼
-    assert {c["model"] for c in curves} == {"lightgbm", "random_forest"}
+    assert len(curves) == 5  # registry MODEL_CATALOG 5종 전부
+    assert {c["model"] for c in curves} == MODEL_IDS
+
+
+# 2026-08-24 추가: 업무명이 신용카드일 때도 동일한 5종 모델 카탈로그로 실제 학습이 수행된다
+# (타깃 컬럼 Class, 피처 V1~V28+Amount — ml.FEATURE_COLUMNS["credit_card"] 참고).
+def test_credit_card_preprocess_check_labels(client: TestClient) -> None:
+    res = client.get("/dataviz/preprocess-check", params={"task": "credit_card", "model": "xgboost"})
+    assert res.status_code == 200
+    body = res.json()
+    assert body["target_distribution"] == {"satisfied": 4, "unsatisfied": 2}
+    assert body["labels"]["negative"] == "정상(0)"
+    assert body["labels"]["positive"] == "사기(1)"
+
+
+def test_credit_card_model_result_all_models(client: TestClient) -> None:
+    res = client.get("/dataviz/model-result", params={"task": "credit_card", "model": "all"})
+    assert res.status_code == 200
+    curves = res.json()["curves"]
+    assert len(curves) == 5
+    assert {c["model"] for c in curves} == MODEL_IDS
+    for c in curves:
+        assert 0.0 <= c["auc"] <= 1.0
+
+
+# 2026-08-24 회귀 테스트 — 운영 장애 재현/수정 검증: creditcard.csv가 없는 환경(Render처럼
+# 해당 CSV가 배포되지 않은 경우, §운영오류1.png)에서도 task=santander 요청은 영향받지
+# 않아야 한다. router가 santander_df/creditcard_df를 항상 함께 Depends로 주입받던 예전
+# 구조에서는 이 테스트가 실패했다(creditcard 로더 예외가 santander 요청까지 500으로 만듦).
+def test_santander_unaffected_when_creditcard_csv_missing(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def _boom():
+        raise FileNotFoundError("[Errno 2] No such file or directory: '../ipynb/data/creditcard.csv'")
+
+    monkeypatch.setattr(crud, "get_creditcard_dataframe", _boom)
+
+    res1 = client.get("/dataviz/preprocess-check", params={"task": "santander", "model": "lightgbm"})
+    assert res1.status_code == 200
+
+    res2 = client.get("/dataviz/model-result", params={"task": "santander", "model": "lightgbm"})
+    assert res2.status_code == 200
+
+
+# 2026-08-24(3차): 마켓 가격 예측까지 실연동되며(§registry.TASKS) 4종 업무가 전부
+# enabled=True가 됐다 — 지금은 실제로 "준비중"인 업무가 없다(문서 군집화는 2026-08-24(2차)에,
+# 마켓 가격 예측은 이번 라운드에 이 카테고리에서 빠졌다). 이 409 분기 자체는 다음에 신규
+# 업무명이 "표시만 되고 준비중"으로 추가될 때 다시 쓰일 코드라 남겨두되, 검증은 registry.TASKS에
+# 가짜 비활성 업무를 하나 끼워 넣어 동작을 직접 확인한다.
+def test_preprocess_check_disabled_task_is_409(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_tasks = registry.TASKS + [{"id": "__disabled_task_for_test__", "label": "테스트용 준비중 업무", "enabled": False}]
+    monkeypatch.setattr(registry, "TASKS", fake_tasks)
+
+    res = client.get("/dataviz/preprocess-check", params={"task": "__disabled_task_for_test__", "model": "all"})
+    assert res.status_code == 409
 
 
 # TC-DV2-09 (TC-55) — AC-DV2-06
