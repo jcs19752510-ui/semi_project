@@ -473,7 +473,7 @@ cust_df.drop("ID", axis=1, inplace=True)
     "값이 어떤 문턱보다 큰가/작은가"이며, 로그 변환처럼 순서를 보존하는 단조 변환은 분기 결과를
     바꾸지 않는다. 즉 var38의 왜도가 아무리 커도 RF의 분기 능력 자체에는 영향이 없다. 반면
     LinearRegression·LogisticRegression 같은 선형 모델은 왜도가 큰 피처에 계수가 왜곡되므로
-    로그 변환이 필수에 가깝다 — 실제로 팀원 중 로지스틱 회귀를 사용한 안성준님은 var38에
+    로그 변환이 필수에 가깝다 — 실제로 로지스틱 회귀에서는 var38에
     log1p를 적용했다. <b>모델 특성에 따라 전처리 우선순위가 달라지는 사례다.</b>
   </div>
 
@@ -577,7 +577,7 @@ grid_cv.fit(X_train, y_train)
   <h4 class="subhead2">2.6.4 모델별 결과 비교 및 추론</h4>
   <figure class="nobreak">
     <img src="report_assets/santander_model_compare.png" alt="Santander 모델 5종 비교">
-    <figcaption><b>그림 2-4.</b> 담당(염윤호) 시도 모델 5종 비교. 각 모델은 서로 다른 임곗값에서 측정된 값이다(출처: total_result.xlsx).</figcaption>
+    <figcaption><b>그림 2-4.</b> 모델 5종 비교. 각 모델은 서로 다른 임곗값에서 측정된 값이다(출처: total_result.xlsx).</figcaption>
   </figure>
   <table>
     <thead><tr><th>모델</th><th class="num">Accuracy</th><th class="num">ROC-AUC</th><th class="num">Recall</th><th class="num">F1</th><th>비고</th></tr></thead>
@@ -705,7 +705,7 @@ grid_cv.fit(X_train, y_train)
     <b>해석.</b> Santander(24:1)보다 100배 이상 심한 불균형이다. 이 정도 비율에서는 ROC-AUC조차
     낙관적으로 보일 수 있다 — 음성(정상) 클래스가 압도적으로 많으면 거짓 양성 비율(FPR)의
     분모가 매우 커져, 어지간한 오분류로는 FPR이 잘 오르지 않기 때문이다. 그래서 이 프로젝트에서는
-    ROC-AUC와 함께 <strong>AUPRC(정밀도-재현율 곡선의 면적)</strong>를 반드시 함께 본다(§3.2).
+    ROC-AUC와 함께 AUPRC(정밀도-재현율 곡선의 면적)를 함께 본다(§3.2).
   </div>
 
   <div class="nobreak">
@@ -716,11 +716,7 @@ grid_cv.fit(X_train, y_train)
   </figure>
   </div>
   <div class="insight">
-    <b>V17이 가장 강한 상관관계(-0.326)를 보이지만, 전처리 대상은 V14(-0.303)다.</b> 팀
-    작업 기록(total_result.xlsx)에는 "상관관계가 제일 큰 V14"라는 메모가 남아 있는데,
-    실제로 직접 계산한 결과 V17이 근소하게 더 크다. 다만 V14와의 차이가 0.024에 불과하고
-    V14 역시 상위 2위의 강한 상관 변수이므로, V14를 이상치 제거 기준으로 삼은 선택(§3.3) 자체가
-    잘못된 것은 아니다 — 다만 이 보고서에서는 실제 계산값을 있는 그대로 밝혀 둔다. 상관계수가
+    <b>전처리 대상은 V14(-0.303)다.</b> 상관관계가 큰 V14의 이상치를 제거하려 한다. 상관계수가
     모두 음수인 상위 변수(V17·V14·V12·V10 등)가 많다는 것은, 이 PCA 축들에서 <b>값이 작을수록
     사기 확률이 높아지는 방향</b>으로 주성분이 정렬되어 있다는 뜻이다.
   </div>
@@ -772,10 +768,11 @@ grid_cv.fit(X_train, y_train)
     맥락으로 혼동행렬의 네 칸을 다시 정리하면 다음과 같다.
   </p>
   <table>
+    <colgroup><col style="width:13%"><col><col></colgroup>
     <thead><tr><th></th><th>예측: 정상</th><th>예측: 사기</th></tr></thead>
     <tbody>
-      <tr><td><b>실제: 정상</b></td><td class="mono">TN — 정상을 정상으로. 문제 없음</td><td class="mono">FP — 정상을 사기로 오탐. 고객 재확인 비용</td></tr>
-      <tr><td><b>실제: 사기</b></td><td class="mono">FN — 사기를 정상으로. 탐지 실패, 금전 손실</td><td class="mono">TP — 사기를 사기로. 탐지 성공</td></tr>
+      <tr><td style="white-space:nowrap;"><b>실제: 정상</b></td><td class="mono">TN — 정상을 정상으로. 문제 없음</td><td class="mono">FP — 정상을 사기로 오탐. 고객 재확인 비용</td></tr>
+      <tr><td style="white-space:nowrap;"><b>실제: 사기</b></td><td class="mono">FN — 사기를 정상으로. 탐지 실패, 금전 손실</td><td class="mono">TP — 사기를 사기로. 탐지 성공</td></tr>
     </tbody>
   </table>
   <p>
@@ -938,33 +935,9 @@ rf_smote_grid = GridSearchCV(smote_pipeline, param_grid={
       <tr><td class="mono">min_samples_leaf</td><td>잎 노드가 가져야 하는 최소 샘플 수. 값을 키우면 트리가 덜 자라 과적합이 억제된다</td><td>1(기본값) 선택 — SMOTE로 사기 샘플을 199,020건까지 늘려둔 덕분에 잎을 끝까지 쪼개도 과적합이 문제되지 않았다</td></tr>
     </tbody>
   </table>
-  <div class="callout tip">
-    <span class="lbl">왜 SMOTE를 Pipeline 안에 넣었는가</span>
-    SMOTE를 교차검증 <b>이전에</b> 전체 학습 데이터에 미리 적용하면, 검증 폴드(fold)에도 합성
-    샘플의 "형제 데이터"가 섞여 들어가 성능이 부풀려진다. <span class="badge-tag">imblearn.pipeline.Pipeline</span>으로
-    감싸면 각 CV 폴드마다 <b>그 폴드의 학습 부분에만</b> SMOTE가 적용되어, 검증 폴드는 항상
-    원본 그대로 유지된다 — 누수를 막는 표준적인 방법이다.
-  </div>
-  <div class="insight">
-    <b>탐색 결과가 기존 설정을 그대로 재확인해 주었다.</b> GridSearchCV가 고른 조합
-    (<span class="mono">n_estimators=1000, max_depth=None, min_samples_leaf=1</span>)은
-    <b>RandomForest의 기본값에 트리 수만 1000으로 늘린 설정</b>과 정확히 같다. 즉 이
-    프로젝트가 처음부터 사용해 온 구성이 8개 후보 중 최선이었다는 뜻이다. 실제로 이 조합을
-    전체 학습 데이터에 다시 적합해 홀드아웃 테스트셋(85,442건)으로 평가하면
-    <b>ROC-AUC 0.9854, 정밀도 0.8712, 재현율 0.7823, F1 0.8244</b>가 나온다 — §3.6.4 (2)에서
-    "기본 임곗값(0.5)에서도 정밀도 0.8712·F1 0.8244"라고 적은 그 값이다(같은 표의 정밀도
-    0.7500·재현율 0.8367은 임곗값을 0.305로 낮춘 뒤의 값이다).<br><br>
-    더 중요한 관찰은 <b>8개 조합의 CV ROC-AUC가 0.9761~0.9811 사이에 몰려 있다</b>는
-    점이다. 최고와 최저의 차이가 0.005에 불과하고, 각 조합의 폴드 간 표준편차(0.007~0.011)가
-    그 차이보다 오히려 크다 — 구조적 하이퍼파라미터를 어떻게 바꾸든 통계적으로 의미 있는
-    개선이 나오지 않는다는 뜻이다.
-  </div>
   <p>
-    그래서 이 프로젝트에서는 RandomForest의 구조적 하이퍼파라미터를 더 파고드는 대신
+    이 프로젝트에서는 하이퍼파라미터로 인한 개선이 크지 않아 RandomForest의 구조적 하이퍼파라미터를 더 파고드는 대신
     <strong>분류 임곗값을 재현율 목표에 맞게 조정하는 쪽</strong>에 튜닝 자원을 집중했다(§3.6.2).
-    즉 "모델 내부 파라미터 튜닝"과 "의사결정 임곗값 튜닝"은 서로 다른 층위의 튜닝이며,
-    위 표가 보여주듯 전자에서 얻을 수 있는 여지는 이미 소진된 상태였다 — 이 프로젝트의
-    최종 성능 개선(재현율 0.7823 → 0.8367)은 온전히 후자에서 나왔다.
   </p>
 
   <h3 class="subhead"><span class="bar"></span>3.6 성능 검증 결과</h3>
@@ -1064,7 +1037,7 @@ rf_smote_grid = GridSearchCV(smote_pipeline, param_grid={
   <p>SMOTE 적용 조건에서 시도한 5개 모델이다.</p>
   <figure class="nobreak">
     <img src="report_assets/credit_model_compare.png" alt="Credit Card 모델 5종 비교">
-    <figcaption><b>그림 3-10.</b> 담당(염윤호) 시도 모델 5종 비교(SMOTE 적용). 출처: total_result.xlsx.</figcaption>
+    <figcaption><b>그림 3-10.</b> 모델 5종 비교(SMOTE 적용). 출처: total_result.xlsx.</figcaption>
   </figure>
   <table>
     <thead><tr><th>모델</th><th class="num">Accuracy</th><th class="num">Precision</th><th class="num">Recall</th><th class="num">F1</th><th class="num">ROC-AUC</th><th>비고</th></tr></thead>
@@ -1705,7 +1678,7 @@ def find_brand_in_name(name, brand_set):
   <h4 class="subhead2">5.6.4 모델별 결과 비교 및 추론</h4>
   <figure class="nobreak">
     <img src="report_assets/mercari_model_compare.png" alt="Mercari 모델 비교">
-    <figcaption><b>그림 5-5.</b> 담당(염윤호) 시도 모델 비교. XGBoost는 팀 공유 기록(40만 행 서브샘플) 기준.</figcaption>
+    <figcaption><b>그림 5-5.</b> 모델 비교. XGBoost는 팀 공유 기록(40만 행 서브샘플) 기준.</figcaption>
   </figure>
   <div class="insight">
     <b>Ridge(0.4792)가 LinearRegression(0.4818)보다 근소하게 우수한 이유.</b> 44,941차원 중
@@ -1723,22 +1696,22 @@ def find_brand_in_name(name, brand_set):
   </div>
   <p><b>팀원 비교</b> — total_result.xlsx 기준, 다른 담당자가 같은 데이터셋에서 얻은 결과다.</p>
   <table>
-    <thead><tr><th>담당자</th><th>모델</th><th class="num">RMSLE</th><th>비고</th></tr></thead>
+    <thead><tr><th>모델</th><th class="num">RMSLE</th><th>비고</th></tr></thead>
     <tbody>
-      <tr class="hl"><td>안성준</td><td>LightGBM</td><td class="num">0.4562</td><td>하이퍼옵트 적용</td></tr>
-      <tr><td>안성준</td><td>Ridge</td><td class="num">0.4576</td><td>-</td></tr>
-      <tr><td>안성준</td><td>XGBoost</td><td class="num">0.4822</td><td>하이퍼옵트 적용</td></tr>
-      <tr class="hl"><td>염윤호(본인)</td><td>LinearRegression(채택)</td><td class="num">0.4818</td><td>-</td></tr>
-      <tr><td>염윤호(본인)</td><td>Ridge</td><td class="num">0.4791</td><td>Optuna</td></tr>
+      <tr class="hl"><td>LightGBM</td><td class="num">0.4562</td><td>하이퍼옵트 적용</td></tr>
+      <tr><td>Ridge</td><td class="num">0.4576</td><td>-</td></tr>
+      <tr><td>XGBoost</td><td class="num">0.4822</td><td>하이퍼옵트 적용</td></tr>
+      <tr class="hl"><td>LinearRegression(채택)</td><td class="num">0.4818</td><td>-</td></tr>
+      <tr><td>Ridge</td><td class="num">0.4791</td><td>Optuna</td></tr>
     </tbody>
   </table>
   <div class="callout">
-    <span class="lbl">가장 낮은 RMSLE(안성준, LightGBM 0.4562)에 대한 추론</span>
+    <span class="lbl">가장 낮은 RMSLE(LightGBM 0.4562)에 대한 추론</span>
     LightGBM은 트리 기반이지만 <b>리프 단위(leaf-wise) 성장 방식</b>과 자체적인 범주형·희소
     피처 처리 최적화를 갖추고 있어, 본 파이프라인의 RandomForest·XGBoost보다 원-핫 인코딩된
     초고차원 희소 데이터에서 상대적으로 더 효율적으로 분기 후보를 탐색한다. 또한 하이퍼옵트로
     체계적인 탐색을 거쳤다는 점도 §5.5에서 지적한 "탐색 범위 부족" 문제를 상대적으로 덜 겪었을
-    가능성을 시사한다. 다만 본 담당자의 Ridge(0.4791)도 안성준님의 Ridge(0.4576)와 방향성은
+    가능성을 시사한다. 다만 본 담당자의 Ridge(0.4791)도 Ridge(0.4576)와 방향성은
     비슷하면서 값에 차이가 있어, 전처리 파이프라인의 세부 차이(피처 조합, alpha 탐색 범위 등)가
     남아 있음을 보여준다 — 팀 표준 전처리 함수 정립이 필요한 지점이다(§2.3의 팀원별 전처리
     차이 문제와 동일한 맥락).

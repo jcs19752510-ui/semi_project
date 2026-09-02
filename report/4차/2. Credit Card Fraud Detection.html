@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Machine Learning 종합 보고서</title>
+<style>
+:root{
+  --navy:#132349; --navy-deep:#0c1730; --navy-mid:#1a2f5c;
+  --gold:#dd9c34; --gold-soft:#e8b768;
+  --cream:#fdf6e6; --cream-border:#eccf93;
+  --warn-bg:#fdeeea; --warn-border:#e0a08f;
+  --ink:#242424; --gray:#6b6b6b; --gray-soft:#8b8b8b;
+  --line:#e4e0d6; --line-soft:#eeece4;
+  --code-bg:#152341; --code-text:#dbe4f5; --code-key:#7fb0f2; --code-str:#8fd6a8; --code-num:#e8b768;
+  --tag-bg:#f4f2ea; --tag-border:#ddd6c2;
+  --blue:#2a78d6; --red:#e34948; --green:#1baf7a;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:"Malgun Gothic","Segoe UI",sans-serif;
+  color:var(--ink); font-size:10.3pt; line-height:1.62;
+  background:#fdfcf9;
+}
+.page{ position:relative; padding:14mm 16mm 16mm 16mm; min-height:287mm; }
+.page + .page{ break-before:page; page-break-before:always; }
+.nobreak{ break-inside:avoid; page-break-inside:avoid; }
+
+/* ---------- Cover ---------- */
+.cover{
+  background:linear-gradient(160deg,var(--navy-deep) 0%,var(--navy-mid) 100%);
+  color:#fff; padding:26mm 18mm; min-height:287mm; position:relative;
+}
+.cover .eyebrow{ display:flex; align-items:center; gap:10px; color:var(--gold-soft);
+  font-size:9.5pt; letter-spacing:3px; font-weight:700; margin-bottom:14mm;}
+.cover .eyebrow::before{ content:""; width:28px; height:3px; background:var(--gold); display:inline-block;}
+.cover h1{ font-size:32pt; line-height:1.25; font-weight:800; margin:0 0 10mm 0; letter-spacing:-0.5px;}
+.cover .sub{ font-size:11.5pt; color:#cfd8ee; line-height:1.7; max-width:150mm; margin-bottom:12mm;}
+.cover .tags{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14mm;}
+.cover .tag{ border:1px solid rgba(255,255,255,0.35); border-radius:20px; padding:5px 14px; font-size:9pt; color:#e8ecf7;}
+.cover .divider{ border-top:1px solid rgba(255,255,255,0.22); margin:10mm 0;}
+.cover .stats{ display:flex; gap:16mm; flex-wrap:wrap; }
+.cover .stat .num{ font-size:19pt; font-weight:800; color:#fff;}
+.cover .stat .num.gold{ color:var(--gold-soft); }
+.cover .stat .cap{ font-size:8.5pt; color:#aab6d6; margin-top:2px;}
+.cover .footer{ position:absolute; bottom:16mm; left:18mm; right:18mm; display:flex; justify-content:space-between;
+  font-size:8.5pt; color:#96a2c4; border-top:1px solid rgba(255,255,255,0.18); padding-top:6mm;}
+
+/* ---------- TOC ---------- */
+.toc h2{ font-size:19pt; color:var(--navy); margin-bottom:2mm;}
+.toc .lead{ color:var(--gray); font-size:9.5pt; margin-bottom:8mm;}
+.toc-group{ margin-bottom:5mm; }
+.toc-group .g-title{ font-weight:800; color:var(--navy); font-size:11pt; display:flex; justify-content:space-between; border-bottom:2px solid var(--navy); padding-bottom:2mm; margin-bottom:2mm;}
+.toc-row{ display:flex; justify-content:space-between; font-size:9.6pt; padding:1.6mm 0; border-bottom:1px dotted var(--line);}
+.toc-row.sub{ padding-left:6mm; color:var(--gray); font-size:9.1pt;}
+.toc-row .pg{ color:var(--gold); font-weight:700; }
+
+/* ---------- Section header (01~07) ---------- */
+.sec-head{ display:flex; align-items:flex-start; gap:6mm; margin-bottom:8mm; }
+.sec-head .no{ font-size:30pt; font-weight:800; color:var(--gold); line-height:1; }
+.sec-head .tt h2{ font-size:18pt; color:var(--navy); margin:0 0 2mm 0; font-weight:800;}
+.sec-head .tt .desc{ color:var(--gray); font-size:10pt; }
+.sec-head-rule{ border:none; border-top:1.4px solid var(--line); margin:0 0 8mm 0;}
+
+.run-head{ display:flex; justify-content:space-between; font-size:8pt; letter-spacing:1px; color:var(--gray-soft);
+  text-transform:uppercase; border-bottom:1px solid var(--line-soft); padding-bottom:3mm; margin-bottom:9mm;}
+
+h3.subhead{ font-size:12.6pt; color:var(--navy); margin:9mm 0 3mm 0; font-weight:800; display:flex; align-items:center; gap:2.5mm;}
+h3.subhead .bar{ width:4px; height:12px; background:var(--gold); display:inline-block; border-radius:1px;}
+h4.subhead2{ font-size:10.8pt; color:var(--navy); margin:6mm 0 2.5mm 0; font-weight:700;}
+
+p{ margin:0 0 3mm 0; }
+strong{ color:var(--navy); }
+
+/* ---------- Callouts ---------- */
+.callout{ background:var(--cream); border-left:3.5px solid var(--gold); border-radius:3px;
+  padding:4.5mm 6mm; margin:4mm 0; font-size:9.6pt;}
+.callout .lbl{ font-weight:800; color:#a9772a; font-size:9pt; margin-bottom:1.5mm; display:block;}
+.callout.warn{ background:var(--warn-bg); border-left-color:#cc6a55; }
+.callout.warn .lbl{ color:#b24a36; }
+.callout.tip{ background:#eef3fb; border-left-color:var(--blue); }
+.callout.tip .lbl{ color:#1f5aa8; }
+
+/* ---------- Tables ---------- */
+table{ width:100%; border-collapse:collapse; margin:3mm 0 5mm 0; font-size:9.3pt;}
+table caption{ caption-side:top; text-align:left; font-size:8.6pt; color:var(--gray); margin-bottom:1.5mm;}
+thead th{ background:var(--navy); color:#fff; text-align:left; padding:2.6mm 3.2mm; font-weight:700; font-size:9pt;}
+thead th.num, td.num{ text-align:right; }
+tbody td{ padding:2.3mm 3.2mm; border-bottom:1px solid var(--line-soft);}
+tbody tr:nth-child(even){ background:#f8f6f0; }
+tbody tr.hl{ background:#fdf1da; }
+tbody tr.hl td{ font-weight:700; }
+td.mono, th.mono{ font-family:Consolas,monospace; font-size:8.6pt; }
+
+/* ---------- Code ---------- */
+pre.code{ background:var(--code-bg); color:var(--code-text); border-radius:4px; padding:4mm 5mm;
+  font-family:Consolas,"Courier New",monospace; font-size:8.6pt; line-height:1.55; overflow-x:auto; margin:3mm 0 5mm 0; white-space:pre-wrap; word-break:break-word;}
+.badge-tag{ display:inline-block; background:var(--tag-bg); border:1px solid var(--tag-border); border-radius:3px;
+  padding:0.5mm 1.6mm; font-family:Consolas,monospace; font-size:8.6pt; color:#5b4a20;}
+
+/* ---------- Stat tiles ---------- */
+.stat-row{ display:flex; gap:9mm; flex-wrap:wrap; margin:4mm 0 6mm 0; padding:5mm 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line);}
+.stat-row .stat{ min-width:28mm; }
+.stat-row .stat .n{ font-size:15pt; font-weight:800; color:var(--navy); }
+.stat-row .stat .n.gold{ color:var(--gold); }
+.stat-row .stat .c{ font-size:8.3pt; color:var(--gray); margin-top:0.8mm;}
+
+/* ---------- Figures ---------- */
+figure{ margin:4mm 0 6mm 0; }
+figure img{ width:100%; display:block; border:1px solid var(--line); border-radius:3px; }
+figcaption{ font-size:8.7pt; color:var(--gray); margin-top:2mm; }
+figcaption b{ color:var(--navy); }
+.fig-2col{ display:flex; gap:5mm; }
+.fig-2col figure{ flex:1; margin:4mm 0 6mm 0; }
+.insight{ background:#f2f6fb; border-left:3px solid var(--blue); padding:3.2mm 5mm; font-size:9.3pt; margin:2mm 0 5mm 0; border-radius:2px;}
+.insight b{ color:#1f5aa8; }
+
+/* ---------- Pipeline diagram ---------- */
+.pipeline{ display:flex; align-items:center; gap:2mm; margin:5mm 0 7mm 0; flex-wrap:wrap; }
+.pipeline .step{ background:var(--navy); color:#fff; border-radius:5px; padding:3.5mm 3mm; font-size:8.3pt; text-align:center; flex:1; min-width:24mm; font-weight:700; line-height:1.4;}
+.pipeline .arrow{ color:var(--gold); font-weight:800; font-size:11pt; }
+.pipeline .num{ display:inline-block; width:14px; height:14px; border-radius:50%; background:var(--gold); color:#fff; font-size:7.5pt; line-height:14px; margin-bottom:1.5mm;}
+
+ul.clean, ol.clean{ margin:2mm 0 4mm 0; padding-left:5mm; }
+ul.clean li, ol.clean li{ margin-bottom:1.6mm; font-size:9.6pt; }
+
+.two-col{ display:flex; gap:6mm; }
+.two-col > div{ flex:1; }
+
+.small-note{ font-size:8.3pt; color:var(--gray-soft); margin-top:1mm;}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="run-head"><span>ML 종합 보고서 · Credit Card Fraud Detection</span><span>2 · 프로젝트 개요</span></div>
+  <div class="sec-head">
+    <div class="no">02</div>
+    <div class="tt"><h2>Credit Card Fraud Detection</h2><div class="desc">신용카드 사기 거래 탐지 — 이진 분류, 초극단적 클래스 불균형</div></div>
+  </div>
+  <hr class="sec-head-rule">
+
+  <h3 class="subhead"><span class="bar"></span>2.1 프로젝트 개요</h3>
+  <p>
+    28개의 PCA(주성분분석) 변환 변수(V1~V28)와 거래 시각(Time), 거래 금액(Amount)으로
+    <strong>사기 거래 여부(Class)</strong>를 예측하는 이진 분류 문제다. 담당 모델은
+    <strong>RandomForest + SMOTE</strong>이며, 임곗값(threshold)을 재현율 중심으로 조정한
+    것이 최종 채택안이다. 이 과정에서 언더샘플링·SMOTE·SMOTE-ENN 세 샘플링 기법의 순수한
+    효과를 비교하는 사전 실험도 함께 진행했다(§2.6.4).
+  </p>
+
+  <div class="stat-row">
+    <div class="stat"><div class="n">284,807</div><div class="c">전체 거래 건수</div></div>
+    <div class="stat"><div class="n">31</div><div class="c">컬럼 수 (Time+V1~V28+Amount+Class)</div></div>
+    <div class="stat"><div class="n gold">0.173%</div><div class="c">사기(Class=1) 비율</div></div>
+    <div class="stat"><div class="n">0건</div><div class="c">결측치</div></div>
+  </div>
+
+  <h4 class="subhead2">2.1.1 입력 피처 구성</h4>
+  <table>
+    <thead><tr><th>#</th><th>컬럼명</th><th>설명</th><th>타입</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td class="mono">Time</td><td>데이터셋 내 첫 거래 이후 경과 시간(초). 관측 구간은 총 48시간(172,792초)</td><td>Numeric</td></tr>
+      <tr><td>2~29</td><td class="mono">V1 ~ V28</td><td>원본 거래 정보를 PCA로 변환한 28개의 익명 연속형 변수</td><td>Numeric(PCA)</td></tr>
+      <tr><td>30</td><td class="mono">Amount</td><td>거래 금액(달러). $0 ~ $25,691.16</td><td>Numeric</td></tr>
+      <tr><td>—</td><td class="mono"><b>Class</b></td><td>예측 대상. 0=정상 거래, 1=사기 거래</td><td>Target(Binary)</td></tr>
+    </tbody>
+  </table>
+  <p class="small-note">card_df.info() 기준 전체 31개 컬럼 모두 결측 없이 float64(30개)·int64(1개, Class)로 채워져 있다.</p>
+
+  <h4 class="subhead2">2.1.2 EDA 요약 통계</h4>
+  <div class="stat-row">
+    <div class="stat"><div class="n">$88.35</div><div class="c">Amount 평균</div></div>
+    <div class="stat"><div class="n">$22.00</div><div class="c">Amount 중앙값</div></div>
+    <div class="stat"><div class="n">$25,691</div><div class="c">Amount 최댓값</div></div>
+    <div class="stat"><div class="n">67.4 MB</div><div class="c">메모리 사용량</div></div>
+  </div>
+  <p>
+    평균($88.35)이 중앙값($22.00)보다 4배 가까이 크다는 것은 소액 거래가 대부분이고 극소수의
+    고액 거래가 평균을 끌어올리는 <strong>오른쪽으로 긴 꼬리(right-skewed)</strong> 분포임을
+    보여준다. 실제로 Amount의 왜도(skewness)는 <strong>16.98</strong>로 극단적으로 크며, 이는
+    §2.3에서 로그 변환을 적용하는 근거가 된다.
+  </p>
+
+  <figure class="nobreak">
+    <img src="report_assets/credit_amount_by_class.png" alt="Class별 Amount 평균과 중앙값 비교">
+    <figcaption><b>그림 2-1.</b> Class별 거래 금액의 평균과 중앙값. 사기 거래는 평균이 정상 거래보다 높지만(+38%) 중앙값은 오히려 낮다(-58%).</figcaption>
+  </figure>
+  <div class="insight">
+    <b>평균과 중앙값이 반대로 움직이는 이유.</b> 사기 거래의 평균 금액($122.21)은 정상
+    거래($88.29)보다 높지만, 중앙값은 사기($9.25)가 정상($22.00)보다 오히려 낮다. 이는
+    사기 거래 금액의 분포가 <strong>양극화</strong>돼 있음을 뜻한다 — 카드 정보 탈취 초기에
+    소액 결제로 카드가 살아있는지 확인하는 "테스트 결제"가 다수 섞여 있고, 동시에 일부
+    고액 사기가 평균을 끌어올린다. 소액 거래라고 해서 안전하다고 볼 수 없다는 뜻이며, 이
+    특성 때문에 Amount 자체보다 V1~V28의 패턴을 종합적으로 학습하는 모델(RandomForest)이
+    금액 기준 규칙보다 효과적이다.
+  </div>
+
+  <h4 class="subhead2">2.1.3 Feature 이름 특징</h4>
+  <p>
+    <span class="badge-tag">V1~V28</span>은 원본 거래 정보(가맹점, 위치, 카드 종류 등 민감
+    정보를 포함할 수 있는 항목)를 PCA로 변환한 익명 변수다. PCA 축이므로 이름 자체에는 의미가
+    없지만, PCA의 정의상 <strong>서로 직교(orthogonal)하도록 구성</strong>된다는 성질은
+    보장된다 — 즉 V1~V28 사이에는 구조적으로 완전한 선형 중복이 나타날 수 없다. 이는 Santander의
+    <span class="badge-tag">ind_*/num_*/saldo_*</span> 접두어 체계처럼 사람이 읽을 수 있는
+    이름 패턴과 대비된다. <span class="badge-tag">Time</span>과 <span class="badge-tag">Amount</span>만
+    PCA를 거치지 않은 원본 변수다.
+  </p>
+
+  <h4 class="subhead2">2.1.4 동일 값인 Feature</h4>
+  <p>
+    <span class="badge-tag">card_df.describe().loc["std",:].unique()</span>의 결과 31개
+    컬럼 모두 서로 다른 표준편차 값을 가졌다 — <strong>표준편차가 0인(=모든 행이 같은 값인)
+    컬럼은 하나도 없다.</strong> Santander에서 분산 0인 컬럼이 34개나 나온 것(§2.1.5)과
+    대조적이다. PCA는 정보가 없는(분산이 거의 0에 가까운) 축은 애초에 주성분으로 채택하지
+    않으므로, 이 데이터셋에서는 구조적으로 무의미한 상수 컬럼이 만들어지지 않는다.
+  </p>
+
+  <h4 class="subhead2">2.1.5 타깃 변수(Class) 분포 분석</h4>
+  <figure class="nobreak">
+    <img src="report_assets/credit_target.png" alt="Class 분포">
+    <figcaption><b>그림 2-2.</b> Class 분포(로그 스케일) — 정상 284,315건(99.827%) vs 사기 492건(0.173%). 약 578:1 비율.</figcaption>
+  </figure>
+  <div class="insight">
+    <b>해석.</b> Santander(24:1)보다 100배 이상 심한 불균형이다. 이 정도 비율에서는 ROC-AUC조차
+    낙관적으로 보일 수 있다 — 음성(정상) 클래스가 압도적으로 많으면 거짓 양성 비율(FPR)의
+    분모가 매우 커져, 어지간한 오분류로는 FPR이 잘 오르지 않기 때문이다. 그래서 이 프로젝트에서는
+    ROC-AUC와 함께 AUPRC(정밀도-재현율 곡선의 면적)를 함께 본다(§2.2).
+  </div>
+
+  <div class="nobreak">
+  <h4 class="subhead2">2.1.6 변수 간 상관관계</h4>
+  <figure>
+    <img src="report_assets/credit_corr.png" alt="31개 변수 전체의 상관계수 히트맵" style="width:120mm;margin:0 auto;">
+    <figcaption><b>그림 2-3.</b> 31개 변수 전체의 피어슨 상관계수 히트맵(<span class="mono">card_df.corr()</span>, cmap=<span class="mono">'RdBu'</span>). 파란색이 양의 상관, 빨간색이 음의 상관이다. V1~V28 블록이 대각선만 진하고 나머지는 균일한 것은 PCA 축들이 서로 직교하기 때문이며(§2.1.3), 실제로 V1~V28 사이의 상관계수 최댓값은 |r|=0.0000이다. 색이 뚜렷하게 갈리는 곳은 맨 위 <span class="mono">Time</span> 행, 아래 <span class="mono">Amount</span> 행, 맨 아래 <span class="mono">Class</span> 행뿐이다.</figcaption>
+  </figure>
+  </div>
+  <div class="insight">
+    <b>전처리 대상은 V14(-0.303)다.</b> 상관관계가 큰 V14의 이상치를 제거하려 한다. 상관계수가
+    모두 음수인 상위 변수(V17·V14·V12·V10 등)가 많다는 것은, 이 PCA 축들에서 <b>값이 작을수록
+    사기 확률이 높아지는 방향</b>으로 주성분이 정렬되어 있다는 뜻이다.
+  </div>
+
+  <h4 class="subhead2">2.1.7 거래 시각(Time) 패턴</h4>
+  <p>
+    <span class="badge-tag">Time</span>은 첫 거래 이후 경과 초이므로, 172,792초(48시간)를
+    24시간 주기로 환산(<span class="mono badge-tag">(Time/3600) % 24</span>)하면 하루 중
+    어느 시간대에 거래가 몰리는지 볼 수 있다. 코드에는 없는 분석이지만, Time 컬럼이 왜
+    §2.3에서 제거되는지 근거를 보태기 위해 직접 확인했다.
+  </p>
+  <figure class="nobreak">
+    <img src="report_assets/credit_time_pattern.png" alt="시간대별 정상·사기 거래 건수">
+    <figcaption><b>그림 2-4.</b> 시간대별 거래 건수 — 정상 거래(왼쪽)는 새벽 0~6시에 뚜렷이 감소하지만, 사기 거래(오른쪽)는 이 시간대에도 상대적으로 활발하다.</figcaption>
+  </figure>
+  <div class="insight">
+    <b>새벽 시간대 사기 비중이 3배 높다.</b> 정상 거래 중 새벽 0~6시에 발생한 비율은
+    8.37%인 반면, 사기 거래 중 같은 시간대 비율은 25.20%다 — 카드 소유자가 잠든 시간에
+    도난·탈취된 카드 정보로 거래를 시도하는 패턴과 부합한다. 다만 이 신호를 <b>Time 자체를
+    피처로 남겨 활용하지 않은 이유</b>는, 이 값이 "데이터 수집 시작 시점으로부터 경과한
+    초"일 뿐 실제 시계(time-of-day)가 아니어서 절대적인 해석에 한계가 있고, 이미 V1~V28
+    중 몇몇 변수가 시간 관련 정보를 간접적으로 포함하고 있을 가능성이 있기 때문이다(§2.3
+    참고). 이 패턴은 어디까지나 참고용 EDA 관찰이며 전처리 근거를 보강하는 용도로 남긴다.
+  </div>
+
+  <h3 class="subhead"><span class="bar"></span>2.2 결과 지표</h3>
+  <h4 class="subhead2">2.2.1 결과 지표 정의 및 선정 근거</h4>
+  <table>
+    <thead><tr><th>지표</th><th>정의</th><th>이 데이터에서의 역할</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">Recall(재현율)</td><td>실제 사기 중 모델이 찾아낸 비율</td><td><b>최우선 지표</b> — 놓친 사기는 그대로 금전 손실</td></tr>
+      <tr><td class="mono">Precision(정밀도)</td><td>사기로 예측한 것 중 실제 사기 비율</td><td>너무 낮으면 정상 거래 차단·고객 불편 급증</td></tr>
+      <tr><td class="mono">F1-Score</td><td>정밀도·재현율의 조화평균</td><td>재현율만 극단적으로 높이는 것을 견제하는 균형 지표</td></tr>
+      <tr><td class="mono">ROC-AUC</td><td>전체 임곗값에서의 TPR-FPR 트레이드오프</td><td>모델 판별력 비교(단독으로는 과대평가 위험, §2.1.5)</td></tr>
+      <tr><td class="mono">AUPRC</td><td>Precision-Recall 곡선의 면적</td><td>극단적 불균형에서 <b>ROC-AUC를 보완</b>하는 핵심 지표</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <span class="lbl">이 프로젝트의 핵심 의도 — 재현율 우선</span>
+    정밀도와 재현율 중에서는 <b>재현율을 우선</b>했다. 카드 사기가 실제로 발생했는데도 모델이
+    이를 탐지하지 못하는 경우(False Negative)는 그대로 금전 피해로 이어지지만, 정상 거래를
+    사기로 오탐지하는 경우(False Positive)는 고객에게 확인 연락이 한 번 더 가는 정도의
+    불편에 그친다. <b>오탐이 늘더라도 사기를 놓치지 않는 쪽을 택한다</b>는 것이 §2.5~2.6에서
+    임곗값을 낮춰 재현율을 끌어올리는 이유다.
+  </div>
+
+  <p>
+    이 다섯 지표는 모두 <strong>혼동행렬(Confusion Matrix)</strong>에서 계산된다. 이 데이터셋의
+    맥락으로 혼동행렬의 네 칸을 다시 정리하면 다음과 같다.
+  </p>
+  <table>
+    <colgroup><col style="width:13%"><col><col></colgroup>
+    <thead><tr><th></th><th>예측: 정상</th><th>예측: 사기</th></tr></thead>
+    <tbody>
+      <tr><td style="white-space:nowrap;"><b>실제: 정상</b></td><td class="mono">TN — 정상을 정상으로. 문제 없음</td><td class="mono">FP — 정상을 사기로 오탐. 고객 재확인 비용</td></tr>
+      <tr><td style="white-space:nowrap;"><b>실제: 사기</b></td><td class="mono">FN — 사기를 정상으로. 탐지 실패, 금전 손실</td><td class="mono">TP — 사기를 사기로. 탐지 성공</td></tr>
+    </tbody>
+  </table>
+  <p>
+    <span class="mono badge-tag">Recall = TP / (TP + FN)</span>이므로, 재현율을 높인다는 것은
+    결국 <strong>FN(탐지 실패)을 줄이는 것과 동의어</strong>다. 반대로
+    <span class="mono badge-tag">Precision = TP / (TP + FP)</span>는 FP(오탐)를 줄일수록
+    올라간다. 두 지표가 동시에 최고가 되는 임곗값은 일반적으로 존재하지 않으므로(§2.6.2에서
+    실제로 확인), 이 프로젝트에서는 FN을 줄이는 쪽에 가중치를 둔 임곗값을 선택했다.
+  </p>
+
+  <h4 class="subhead2">2.2.2 결과 지표 해석 계획</h4>
+  <p>
+    하이퍼파라미터 튜닝(GridSearchCV)의 기준 지표로는 accuracy 대신
+    <span class="badge-tag">Recall(재현율), ROC-AUC</span>를 사용했다 — 이 데이터처럼
+    양성(사기) 비율이 0.173%뿐인 경우 accuracy는 항상 99.8% 이상으로 나와 모델 간 우열을
+    가리는 데 도움이 되지 않기 때문이다. 임곗값 조정은 모델 학습이 끝난 뒤 별도 단계로
+    진행하므로, 튜닝 단계에서는 임곗값에 의존하지 않는 지표(ROC-AUC)로 샘플링 기법과 모델의
+    우열을 먼저 가리고, 최종 임곗값은 재현율 목표에 맞춰 §2.6에서 따로 정한다.
+  </p>
+
+  <h3 class="subhead"><span class="bar"></span>2.3 데이터 전처리 &amp; 클리닝</h3>
+  <table>
+    <thead><tr><th>처리</th><th>내용</th><th>근거</th></tr></thead>
+    <tbody>
+      <tr><td>Time 제거</td><td>거래 순번성 정보로 사기 여부와 직접 관련 없음</td><td>노이즈 제거</td></tr>
+      <tr><td>Amount 로그 변환</td><td><span class="mono badge-tag">log1p(Amount)</span> → Amount_Scaled 컬럼 추가</td><td>왜도 16.98 → 0.16로 완화(그림 2-5)</td></tr>
+      <tr><td>V14 이상치 제거</td><td>사기(Class=1) 데이터의 V14 IQR×1.5 범위 밖 값 제거</td><td>사기 클래스 내에서 상관관계 상위권 변수의 잡음 축소</td></tr>
+      <tr><td>train/test 분할</td><td>7:3, <span class="mono badge-tag">stratify=y</span></td><td>0.173% 비율을 양쪽 세트에 동일하게 유지</td></tr>
+    </tbody>
+  </table>
+  <pre class="code">def get_preprocessed_df(df):
+    df_copy = df.copy()
+    amount_n = np.log1p(df_copy['Amount'])
+    df_copy.insert(0, 'Amount_Scaled', amount_n)
+    df_copy.drop(['Time','Amount'], axis=1, inplace=True)
+    return df_copy
+
+# train_test_split(test_size=0.3, random_state=42, stratify=y_target) 이후,
+# train과 test 각각에서 독립적으로 V14 이상치를 제거한다.</pre>
+  <table>
+    <caption>log1p 변환 전후 Amount 통계 비교</caption>
+    <thead><tr><th>구분</th><th class="num">평균</th><th class="num">표준편차</th><th class="num">왜도(skew)</th></tr></thead>
+    <tbody>
+      <tr><td>변환 전 (Amount, $)</td><td class="num">88.35</td><td class="num">250.12</td><td class="num">16.98</td></tr>
+      <tr class="hl"><td>변환 후 (Amount_Scaled = log1p)</td><td class="num">-</td><td class="num">-</td><td class="num">0.16</td></tr>
+    </tbody>
+  </table>
+  <p>
+    왜도(skewness)는 0에 가까울수록 좌우 대칭에 가깝다. 16.98은 정규분포(왜도 0)와 비교할
+    수 없을 만큼 큰 값이며, 로그 변환만으로 0.16까지 낮아진다는 것은 Amount의 비대칭성이
+    극소수 고액 거래에 의해 만들어진 것이지 데이터 자체의 근본적인 특성이 아니라는 뜻이다.
+  </p>
+  <figure class="nobreak">
+    <img src="report_assets/credit_amount.png" alt="Amount 분포">
+    <figcaption><b>그림 2-5.</b> Amount 원본(왜도 16.98) vs log1p 변환 후(왜도 0.16). 변환 후 다봉형(multi-modal)이지만 극단적 꼬리는 크게 줄었다.</figcaption>
+  </figure>
+
+  <figure class="nobreak">
+    <img src="report_assets/credit_v14_box.png" alt="V14 분포 Class별 비교 및 이상치 제거 기준">
+    <figcaption><b>그림 2-6.</b> V14 분포의 Class별 비교. 사기 클래스(오른쪽)는 정상 클래스(왼쪽)보다 값이 뚜렷이 낮은 쪽으로 이동해 있으며, 점선은 사기 클래스 기준 IQR×1.5 이상치 경계(-17.81 ~ 3.83)다.</figcaption>
+  </figure>
+  <div class="insight">
+    <b>V14가 이상치 제거 대상으로 적합한 이유가 시각적으로 드러난다.</b> 정상 거래(파란 박스)는
+    중앙값이 0 부근에 밀집해 있는 반면, 사기 거래(빨간 박스)는 중앙값이 약 -6.8로 뚜렷하게
+    낮은 쪽에 분포한다 — 두 클래스의 분포가 잘 분리되어 있어 V14가 사기 판별에 유용한
+    변수임을 보여준다. 다만 사기 클래스 내부에서도 IQR 기준 하한(-17.81)보다 더 낮은 값
+    몇 건이 존재하며, 이 극단값들이 학습 시 결정경계를 왜곡할 수 있어 §2.3의 이상치 제거
+    대상이 된다.
+  </div>
+
+  <h3 class="subhead"><span class="bar"></span>2.4 피처 구조화 &amp; 엔지니어링</h3>
+  <p>
+    V1~V28은 이미 PCA로 압축된 피처라 추가 파생 변수를
+    만들 여지가 크지 않다. 이 노트북에서 유일하게 새로 만든 컬럼은 §2.3의
+    <span class="badge-tag">Amount_Scaled</span>(로그 변환된 Amount)이며, 그 외 범주형
+    인코딩이나 텍스트 벡터화도 필요 없다 — 31개 컬럼이 모두 이미 수치형이기 때문이다. 이
+    프로젝트에서 실질적으로 "피처 엔지니어링"에 해당하는 작업은 <strong>클래스 불균형을
+    보정하는 샘플링 전략 선택</strong>이며, 이는 모델링과 결합되므로 §2.5에서 함께 다룬다.
+  </p>
+
+  <h3 class="subhead"><span class="bar"></span>2.5 모델링 &amp; 하이퍼파라미터 튜닝</h3>
+  <h4 class="subhead2">2.5.1 왜 리샘플링이 필요한가</h4>
+  <p>
+    대부분의 분류 모델은 학습 과정에서 <strong>전체 손실(loss)을 최소화</strong>하는 방향으로
+    학습한다. 사기 비율이 0.173%인 원본 데이터를 그대로 학습하면, 모델이 사기 492건을 모두
+    틀리게 예측해도 손실 총합에는 거의 영향이 없다 — 정상 284,315건만 잘 맞히면 손실이
+    이미 충분히 낮기 때문이다. 그 결과 모델은 "사기 패턴을 배우는 것"보다 "다수 클래스를
+    더 정확히 맞히는 것"에 최적화되기 쉽다. 리샘플링은 학습 단계에서 두 클래스의 비중을
+    강제로 맞춰, 모델이 사기 패턴 자체를 무시하지 못하게 만드는 장치다.
+  </p>
+
+  <h4 class="subhead2">2.5.2 샘플링 전략 3종</h4>
+  <table>
+    <thead><tr><th>기법</th><th>방식</th><th>학습 데이터 변화</th></tr></thead>
+    <tbody>
+      <tr><td><b>언더샘플링</b></td><td>정상 거래를 사기 건수만큼 무작위로 축소</td><td class="mono">199,362건 → 684건 (342 / 342)</td></tr>
+      <tr><td><b>SMOTE</b></td><td>사기 샘플 주변에 합성 데이터를 생성해 오버샘플링</td><td class="mono">199,362건 → 398,040건 (199,020 / 199,020)</td></tr>
+      <tr><td><b>SMOTE-ENN</b></td><td>SMOTE 이후 경계가 모호한 샘플을 ENN으로 추가 제거</td><td class="mono">199,362건 → 397,717건 (199,020 / 198,697)</td></tr>
+    </tbody>
+  </table>
+  <p>
+    세 기법 모두 <strong>train 데이터에만</strong> 적용했다(test는 원본 분포 유지). 세 기법의
+    순수한 효과 비교 결과는 §2.6.4 (1)에서
+    다룬다. 최종적으로 5개 모델 모두 <b>SMOTE</b>를 채택했다 — 언더샘플링은 정상 거래 정보를
+    99.7% 가까이 버려 실무 적용이 어렵고(§2.6.4), SMOTE-ENN은 SMOTE 대비 뚜렷한 이점이
+    크지 않았기 때문이다.
+  </p>
+  <figure class="nobreak">
+    <img src="report_assets/credit_smote_scatter.png" alt="SMOTE 적용 전후 V17-V14 산점도">
+    <figcaption><b>그림 2-7.</b> 상관관계가 가장 큰 두 변수(V17, V14) 평면에 투영한 SMOTE 적용 전후 비교. 왼쪽은 원본 사기 샘플(빨강)이 정상 샘플(파랑)에 둘러싸여 희소하게 흩어져 있고, 오른쪽은 원본 사기 샘플 사이를 잇는 선분 위에 합성 샘플(금색)이 채워진 모습이다.</figcaption>
+  </figure>
+  <div class="insight">
+    <b>SMOTE가 실제로 하는 일이 이 그림에 그대로 나타난다.</b> SMOTE(Synthetic Minority
+    Oversampling TEchnique)는 소수 클래스(사기) 샘플 하나를 골라 <b>가장 가까운 이웃
+    사기 샘플과의 사이를 잇는 선분 위의 임의의 지점</b>에 새 합성 샘플을 만든다. 오른쪽
+    그림에서 금색 점들이 빨간 원본 사기 점들을 잇는 그물망 형태로 나타나는 것이 바로 이
+    보간(interpolation) 과정이다. 이 방식 덕분에 SMOTE는 언더샘플링과 달리 정상 거래
+    정보를 하나도 버리지 않으면서도, 모델이 학습할 수 있는 사기 샘플의 절대량을 199,020건
+    (원본 342건의 약 582배)까지 늘릴 수 있다. 다만 이 보간은 <b>기존 사기 샘플들이 이루는
+    공간 안에서만</b> 이루어지므로, 원본 사기 샘플이 커버하지 못하는 완전히 새로운 유형의
+    사기 패턴까지 만들어내지는 못한다는 한계도 동시에 보여준다.
+  </div>
+
+  <h4 class="subhead2">2.5.3 GridSearchCV 탐색 (RandomForest 기준)</h4>
+  <p>
+    최종 채택 모델인 <b>RandomForest</b>를 대상으로, §2.2.2에서 정한 대로 임곗값에 의존하지
+    않는 <span class="badge-tag">scoring='roc_auc'</span>를 기준으로 5-fold 교차검증 탐색을
+    수행했다. 세 개의 구조적 파라미터를 각각 2개 값씩, 총 8개 조합 × 5폴드 = 40회 학습이다.
+  </p>
+  <pre class="code">smote_pipeline = ImbPipeline([
+    ('sampler', SMOTE(random_state=42)),
+    ('classifier', RandomForestClassifier(n_jobs=-1, random_state=42))
+])
+rf_smote_grid = GridSearchCV(smote_pipeline, param_grid={
+    'classifier__n_estimators': [300, 1000], 'classifier__max_depth': [None, 16],
+    'classifier__min_samples_leaf': [1, 3]
+}, cv=StratifiedKFold(n_splits=5, shuffle=True, random_state=42), scoring='roc_auc')
+# Best Params: n_estimators=1000, max_depth=None, min_samples_leaf=1
+# Best CV ROC-AUC: 0.9811</pre>
+  <table>
+    <caption>8개 조합의 교차검증 ROC-AUC (평균 ± 표준편차, 순위순)</caption>
+    <thead><tr><th class="num">n_estimators</th><th>max_depth</th><th class="num">min_samples_leaf</th><th class="num">CV ROC-AUC</th><th class="num">표준편차</th><th class="num">순위</th></tr></thead>
+    <tbody>
+      <tr class="hl"><td class="num">1000</td><td class="mono">None</td><td class="num">1</td><td class="num">0.9811</td><td class="num">0.0071</td><td class="num">1</td></tr>
+      <tr><td class="num">1000</td><td class="mono">16</td><td class="num">3</td><td class="num">0.9810</td><td class="num">0.0081</td><td class="num">2</td></tr>
+      <tr><td class="num">1000</td><td class="mono">None</td><td class="num">3</td><td class="num">0.9806</td><td class="num">0.0076</td><td class="num">3</td></tr>
+      <tr><td class="num">1000</td><td class="mono">16</td><td class="num">1</td><td class="num">0.9806</td><td class="num">0.0091</td><td class="num">4</td></tr>
+      <tr><td class="num">300</td><td class="mono">16</td><td class="num">3</td><td class="num">0.9802</td><td class="num">0.0072</td><td class="num">5</td></tr>
+      <tr><td class="num">300</td><td class="mono">16</td><td class="num">1</td><td class="num">0.9792</td><td class="num">0.0112</td><td class="num">6</td></tr>
+      <tr><td class="num">300</td><td class="mono">None</td><td class="num">3</td><td class="num">0.9791</td><td class="num">0.0083</td><td class="num">7</td></tr>
+      <tr><td class="num">300</td><td class="mono">None</td><td class="num">1</td><td class="num">0.9761</td><td class="num">0.0103</td><td class="num">8</td></tr>
+    </tbody>
+  </table>
+  <table>
+    <caption>탐색한 RandomForest 파라미터가 실제로 조절하는 것</caption>
+    <thead><tr><th>파라미터</th><th>조절 대상</th><th>이 데이터에서의 선택</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">n_estimators</td><td>앙상블에 포함되는 결정 트리의 개수. 많을수록 확률 추정이 부드러워지지만 학습·예측 시간이 비례해서 늘어난다</td><td>1000(탐색 범위 중 큰 값) 선택 — 상위 4개 조합이 모두 1000이었다. 트리 수가 이 데이터에서 가장 영향이 큰 파라미터였다</td></tr>
+      <tr><td class="mono">max_depth</td><td>트리의 최대 깊이. None은 잎이 순수해질 때까지 제한 없이 분기함을 뜻한다</td><td>None(무제한) 선택 — 다만 16으로 제한한 조합(0.9810)과의 차이가 0.0001에 불과해, 사실상 성능 차이가 없었다</td></tr>
+      <tr><td class="mono">min_samples_leaf</td><td>잎 노드가 가져야 하는 최소 샘플 수. 값을 키우면 트리가 덜 자라 과적합이 억제된다</td><td>1(기본값) 선택 — SMOTE로 사기 샘플을 199,020건까지 늘려둔 덕분에 잎을 끝까지 쪼개도 과적합이 문제되지 않았다</td></tr>
+    </tbody>
+  </table>
+  <p>
+    이 프로젝트에서는 하이퍼파라미터로 인한 개선이 크지 않아 RandomForest의 구조적 하이퍼파라미터를 더 파고드는 대신
+    <strong>분류 임곗값을 재현율 목표에 맞게 조정하는 쪽</strong>에 튜닝 자원을 집중했다(§2.6.2).
+  </p>
+
+  <h3 class="subhead"><span class="bar"></span>2.6 성능 검증 결과</h3>
+  <h4 class="subhead2">2.6.1 파이프라인 요약 다이어그램</h4>
+  <div class="pipeline nobreak">
+    <div class="step"><span class="num">1</span><br>Time 제거<br>Amount log1p</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">2</span><br>train/test<br>7:3 분할(stratify)</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">3</span><br>V14 이상치<br>개별 제거</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">4</span><br>SMOTE<br>(train만)</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">5</span><br>RandomForest<br>학습</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">6</span><br>임곗값 조정<br>(재현율 우선)</div>
+  </div>
+
+  <h4 class="subhead2">2.6.2 지표 결과 (채택 파이프라인: RandomForest + SMOTE)</h4>
+  <p>동일한 모델을 세 가지 임곗값에서 평가해, 임곗값 조정이 성능에 미치는 영향을 그대로 보여준다.</p>
+  <table>
+    <thead><tr><th>임곗값</th><th class="num">Accuracy</th><th class="num">Precision</th><th class="num">Recall</th><th class="num">F1</th><th class="num">ROC-AUC</th><th class="num">AUPRC</th></tr></thead>
+    <tbody>
+      <tr><td>0.500 (기본값)</td><td class="num">0.9994</td><td class="num">0.8712</td><td class="num">0.7823</td><td class="num">0.8244</td><td class="num">0.9854</td><td class="num">0.8314</td></tr>
+      <tr><td>0.727 (최대 F1 지점)</td><td class="num">-</td><td class="num">0.9558</td><td class="num">0.7347</td><td class="num">0.8308</td><td class="num">0.9854</td><td class="num">0.8314</td></tr>
+      <tr class="hl"><td>0.305 (채택 — 재현율 우선)</td><td class="num">0.9992</td><td class="num">0.7500</td><td class="num">0.8367</td><td class="num">0.7910</td><td class="num">0.9854</td><td class="num">0.8314</td></tr>
+    </tbody>
+  </table>
+  <p class="small-note">채택 임곗값(0.305) 혼동행렬: TN=85,254 · FP=41 · FN=24 · TP=123 (테스트셋 사기 147건 중 123건 탐지). ROC-AUC와 AUPRC는 임곗값에 무관한 확률 기반 지표라 세 행에서 값이 동일하다.</p>
+
+  <figure class="nobreak">
+    <img src="report_assets/credit_threshold.png" alt="RandomForest+SMOTE 임곗값별 정밀도-재현율-F1">
+    <figcaption><b>그림 2-8.</b> RandomForest + SMOTE의 임곗값별 정밀도·재현율·F1 변화. 임곗값을 0.727 → 0.305로 낮출수록 재현율은 오르고 정밀도는 떨어진다.</figcaption>
+  </figure>
+
+  <h4 class="subhead2">2.6.3 지표 해석</h4>
+  <div class="insight">
+    <b>왜 최대 F1(0.8308) 지점 대신 0.305를 골랐는가.</b> 임곗값 0.727에서는 F1이 가장
+    높지만(0.8308) 재현율은 0.7347에 그친다 — 테스트셋 사기 147건 중 <b>39건을 놓친다</b>는
+    뜻이다. 임곗값을 0.305로 낮추면 F1은 0.7910으로 5.9%p 낮아지지만, 재현율은 0.8367로
+    올라 <b>놓치는 사기가 24건까지 줄어든다</b>(39건 → 24건, 15건 추가 탐지). 이 프로젝트는
+    §2.2에서 밝힌 대로 "F1을 최대화하는 것"이 아니라 "F1이 크게 나빠지지 않는 선에서
+    재현율을 최대화하는 것"을 목표로 했으므로, F1 하락폭을 최대 F1 대비 5% 이내로 제한하는
+    조건에서 재현율이 가장 높은 임곗값을 탐색해 0.305를 선택했다.
+  </div>
+  <p>
+    이 조정의 대가는 정밀도다. 정밀도는 0.9558(임곗값 0.727)에서 0.7500(임곗값 0.305)으로
+    떨어진다 — 사기로 예측한 거래 4건 중 1건은 실제로는 정상 거래라는 뜻이다. 다만 §2.2에서
+    정의한 대로 오탐지의 비용(고객 재확인 연락)은 탐지 실패의 비용(금전 손실)보다 훨씬
+    작다고 보았으므로, 이 트레이드오프는 이 프로젝트의 목적에 부합한다.
+  </p>
+  <div class="insight">
+    <b>구체적인 활용 예시.</b> 이 테스트셋의 사기 거래 147건의 평균 금액은 §2.1.2에서 확인한
+    Class별 평균을 그대로 적용하면 <b>건당 약 $122</b>다. 임곗값 0.727을 쓰면 39건(약
+    $4,760 상당)을 놓치지만, 0.305를 쓰면 24건(약 $2,930 상당)만 놓친다 — 채택한 임곗값이
+    약 <b>$1,830어치의 사기를 추가로 막아낸다</b>는 뜻이다. 그 대가로 정상 거래 41건이
+    추가로 오탐지되어 고객에게 확인 연락이 가지만, 이는 카드사가 통상적으로 감내할 수 있는
+    운영 비용 수준이다.
+  </div>
+  <p>
+    ROC-AUC(0.9854)만 보면 매우 높아 보이지만, AUPRC(0.8314)는 상대적으로 낮다 — 이는
+    §2.1.5에서 설명한 대로 극단적 불균형에서 ROC-AUC가 실제보다 낙관적으로 보이는 현상을
+    보여주는 구체적 사례다. <strong>이 데이터셋에서는 AUPRC가 ROC-AUC보다 모델 성능을 더
+    보수적이고 현실적으로 보여준다.</strong>
+  </p>
+
+  <h4 class="subhead2">2.6.4 모델별 결과 비교 및 추론</h4>
+  <p>세 개의 관점 — 샘플링 기법, 모델 종류, 임곗값 — 을 각각 독립적으로 비교해, 최종 채택안(RandomForest + SMOTE + 임곗값 0.305)이 세 관점 모두에서 근거를 갖췄는지 확인한다.</p>
+  <h4 class="subhead2">(1) 샘플링 기법별 비교</h4>
+  <p>기본 파라미터로 통일해 세 기법만 바꿔 비교했다. </p>
+  <figure class="nobreak">
+    <img src="report_assets/credit_sampling_compare.png" alt="샘플링 기법별 비교">
+    <figcaption><b>그림 2-9.</b> 샘플링 기법별 비교(튜닝 전 동일 조건).</figcaption>
+  </figure>
+  <table>
+    <thead><tr><th>샘플링</th><th class="num">Accuracy</th><th class="num">Precision</th><th class="num">Recall</th><th class="num">F1</th><th class="num">AUC</th><th class="num">AUPRC</th></tr></thead>
+    <tbody>
+      <tr><td>언더샘플링</td><td class="num">0.9695</td><td class="num">0.0478</td><td class="num">0.8844</td><td class="num">0.0906</td><td class="num">0.9777</td><td class="num">0.6689</td></tr>
+      <tr><td>SMOTE</td><td class="num">0.9994</td><td class="num">0.8731</td><td class="num">0.7959</td><td class="num">0.8327</td><td class="num">0.9697</td><td class="num">0.8274</td></tr>
+      <tr><td>SMOTE-ENN</td><td class="num">0.9992</td><td class="num">0.7453</td><td class="num">0.8163</td><td class="num">0.7792</td><td class="num">0.9739</td><td class="num">0.8059</td></tr>
+    </tbody>
+  </table>
+  <div class="insight">
+    <b>언더샘플링은 왜 재현율이 가장 높은데(0.8844) 정밀도가 극단적으로 낮은가(0.0478).</b>
+    학습 데이터를 684건까지 줄이면서 정상 거래 정보 대부분(199,362건 중 198,678건)을
+    버렸다. 모델이 "사기 패턴"을 공격적으로 학습해 재현율은 높지만, 실제 운영에서는 정상
+    거래 20건 중 1건꼴로 사기 경보가 울리는 셈이라 실용성이 떨어진다. <b>SMOTE</b>는 정상
+    거래 정보를 보존하면서 사기 샘플만 합성으로 늘려, 정밀도(0.8731)와 재현율(0.7959)의
+    균형이 가장 좋다. <b>SMOTE-ENN</b>은 SMOTE보다 재현율은 근소하게 높지만(0.8163)
+    정밀도가 크게 낮다(0.7453) — 경계 샘플을 추가로 제거하는 ENN 단계가 정상 거래처럼
+    보이는 사기 샘플까지 학습에서 덜어내며 결정 경계를 사기 쪽으로 더 넓힌 것으로 해석된다.
+    <b>종합적으로 세 기법 중에서는 SMOTE가 정밀도-재현율 균형이 가장 우수해, 이후 5개
+    모델 비교(2)에서 공통 전처리로 채택했다.</b>
+  </div>
+
+  <h4 class="subhead2">(2) 모델별 비교</h4>
+  <p>SMOTE 적용 조건에서 시도한 5개 모델이다.</p>
+  <figure class="nobreak">
+    <img src="report_assets/credit_model_compare.png" alt="Credit Card 모델 5종 비교">
+    <figcaption><b>그림 2-10.</b> 모델 5종 비교(SMOTE 적용). 출처: total_result.xlsx.</figcaption>
+  </figure>
+  <table>
+    <thead><tr><th>모델</th><th class="num">Accuracy</th><th class="num">Precision</th><th class="num">Recall</th><th class="num">F1</th><th class="num">ROC-AUC</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td>LightGBM</td><td class="num">0.9994</td><td class="num">0.8731</td><td class="num">0.7959</td><td class="num">0.8327</td><td class="num">0.9720</td><td>GridSearchCV 튜닝</td></tr>
+      <tr><td>XGBoost</td><td class="num">0.9993</td><td class="num">0.8276</td><td class="num">0.8163</td><td class="num">0.8219</td><td class="num">0.9771</td><td>기본 파라미터</td></tr>
+      <tr class="hl"><td>RandomForest (채택)</td><td class="num">0.9992</td><td class="num">0.7500</td><td class="num">0.8367</td><td class="num">0.7910</td><td class="num">0.9854</td><td>임곗값 0.305 조정</td></tr>
+      <tr><td>GradientBoost</td><td class="num">0.9993</td><td class="num">0.8438</td><td class="num">0.7347</td><td class="num">0.7855</td><td class="num">0.9749</td><td>임곗값 0.9844 조정</td></tr>
+      <tr><td>LogisticRegression</td><td class="num">0.9994</td><td class="num">0.8550</td><td class="num">0.7619</td><td class="num">0.8057</td><td class="num">0.9675</td><td>임곗값 최적화</td></tr>
+    </tbody>
+  </table>
+  <div class="insight">
+    <b>RandomForest를 채택한 근거.</b> ROC-AUC 0.9854로 5개 모델 중 가장 높아 모델 자체의
+    판별력이 가장 우수했고, 기본 임곗값(0.5)에서도 정밀도 0.8712·F1 0.8244로 준수한 균형을
+    보였다. 여기에 재현율 목표에 맞춘 임곗값 조정 여지가 다른 모델보다 컸다 — RandomForest는
+    여러 트리의 확률을 평균화하는 배깅(bagging) 구조라 확률 추정이 부드럽고 안정적이어서,
+    임곗값을 낮춰도 성능이 급격히 무너지지 않는다. 그 결과 F1은 채택한 LightGBM 단독
+    비교(0.8327)보다 낮아졌지만(0.7910), <b>재현율(0.8367)은 5개 모델 중 가장 높다</b> —
+    이 프로젝트의 핵심 목표(§2.2)와 가장 잘 맞는 모델이다.<br><br>
+    <b>LightGBM·XGBoost는 F1·정밀도가 상대적으로 높지만 재현율은 RandomForest보다 낮다
+    (0.7959, 0.8163).</b> 두 모델 모두 그레디언트 부스팅 계열로, 손실 함수를 정밀도-재현율의
+    균형점 근처에서 최소화하도록 학습이 진행돼 기본 임곗값에서 이미 F1이 최적점에 가깝다.
+    반대로 말하면 <b>임곗값을 낮춰 재현율을 더 끌어올릴 여지가 RandomForest보다 제한적</b>이라는
+    뜻이기도 하다.<br><br>
+    <b>LogisticRegression·GradientBoost는 재현율이 가장 낮다(0.76, 0.73).</b> 두 모델
+    모두 선형 결정경계 또는 상대적으로 얕은 트리 위주 구조라, SMOTE로 늘어난 사기 샘플의
+    국소적(local) 패턴을 트리 앙상블만큼 세밀하게 분리하지 못한 것으로 판단한다.
+    <b>종합적으로 ROC-AUC가 가장 높고 임곗값 조정으로 재현율을 극대화할 수 있었던
+    RandomForest + SMOTE가 이 프로젝트의 목적에 가장 부합해 최종 채택했다.</b>
+  </div>
+
+  <h4 class="subhead2">(3) AUPRC로 다시 본 5개 모델</h4>
+  <p>
+    §2.1.5에서 밝힌 대로 이 데이터셋에서는 ROC-AUC가 실제보다 낙관적으로 보일 수 있어,
+    AUPRC(정밀도-재현율 곡선의 면적) 기준으로도 5개 모델을 다시 확인했다.
+  </p>
+  <table>
+    <thead><tr><th>모델</th><th class="num">ROC-AUC</th><th class="num">AUPRC</th></tr></thead>
+    <tbody>
+      <tr><td>LightGBM</td><td class="num">0.9720</td><td class="num">0.8342</td></tr>
+      <tr><td>XGBoost</td><td class="num">0.9771</td><td class="num">0.8350</td></tr>
+      <tr class="hl"><td>RandomForest (채택)</td><td class="num">0.9854</td><td class="num">0.8314</td></tr>
+      <tr><td>GradientBoost</td><td class="num">0.9749</td><td class="num">0.6687</td></tr>
+      <tr><td>LogisticRegression</td><td class="num">0.9675</td><td class="num">0.7024</td></tr>
+    </tbody>
+  </table>
+  <div class="insight">
+    <b>ROC-AUC 1위와 AUPRC 1위가 다른 모델이라는 것이 핵심 관찰이다.</b> AUPRC만 보면
+    XGBoost(0.8350)와 LightGBM(0.8342)이 RandomForest(0.8314)보다 근소하게 높다 —
+    극단적 불균형 상황에서 두 지표가 서로 다른 이야기를 할 수 있다는 §2.1.5의 우려가
+    실제로 나타난 사례다. 다만 그 차이(0.003~0.004)는 크지 않고, RandomForest는
+    ROC-AUC 우위(0.9854 vs 0.97대)가 더 뚜렷하며 §2.6.2에서 확인했듯 <b>임곗값 조정으로
+    재현율을 가장 크게 끌어올릴 수 있는 모델</b>이었다. 이 프로젝트는 단일 지표 최댓값이
+    아니라 "재현율 우선"이라는 목표 함수를 기준으로 모델을 골랐으므로, AUPRC가 근소하게
+    낮다는 이유만으로 RandomForest 채택을 재고할 근거는 아니라고 판단했다.
+  </div>
+
+  <div class="callout">
+    <span class="lbl">2장 종합 결론</span>
+    ① 언더샘플링·SMOTE·SMOTE-ENN
+    중에서는 정상 거래 정보를 보존하는 SMOTE가 정밀도-재현율 균형이 가장 좋았고, ② SMOTE
+    적용 후 5개 모델을 비교한 결과 RandomForest가 ROC-AUC(0.9854)와 임곗값 조정 여지에서
+    가장 우수했으며, ③ 최대 F1 임곗값(0.727, 사기 108건 탐지·39건 손실) 대신 재현율 우선
+    임곗값(0.305)을 채택해 테스트셋 사기 147건 중 <b>123건(84%)을 탐지</b>하고 손실을
+    24건까지 줄였다. 이 과정 전체가 §2.2에서 정의한 "오탐지 비용 &lt; 탐지 실패 비용"이라는
+    하나의 원칙을 일관되게 따른 결과다.
+  </div>
+</div>
+
+</body>
+</html>
