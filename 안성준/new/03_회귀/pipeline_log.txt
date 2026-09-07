@@ -1,0 +1,58 @@
+1) µ•¿Ã≈Õ ∑ŒµÂ
+data shape: (1482535, 8)
+2) ∞·√¯ƒ° »Æ¿Œ (¿¸)
+train_id                  0
+name                      0
+item_condition_id         0
+category_name          6327
+brand_name           632682
+price                     0
+shipping                  0
+item_description          6
+dtype: int64
+item_description == "No description yet" (literal): 82489
+[saved figure] D:\my_workspace\ml_dev\03_»∏±Õ\results\figures\01_missing_before.png
+[saved pickle] D:\my_workspace\ml_dev\03_»∏±Õ\results\missing_before.pkl
+3) price ∫–∆˜ ¿¸/»ƒ ∫Ò±≥
+[saved figure] D:\my_workspace\ml_dev\03_»∏±Õ\results\figures\02_price_distribution_before_after.png
+price skew: 11.393232000122508 -> log_price skew: 0.659423201880768
+4) EDA
+[saved figure] D:\my_workspace\ml_dev\03_»∏±Õ\results\figures\03_condition_boxplot.png
+[saved figure] D:\my_workspace\ml_dev\03_»∏±Õ\results\figures\04_shipping_cdf.png
+[saved figure] D:\my_workspace\ml_dev\03_»∏±Õ\results\figures\05_category_main_count.png
+[saved figure] D:\my_workspace\ml_dev\03_»∏±Õ\results\figures\06_brand_top10.png
+[saved figure] D:\my_workspace\ml_dev\03_»∏±Õ\results\figures\07_wordcloud_name.png
+5) ∞·√¯ƒ° √≥∏Æ
+[saved figure] D:\my_workspace\ml_dev\03_»∏±Õ\results\figures\08_missing_after.png
+[saved pickle] D:\my_workspace\ml_dev\03_»∏±Õ\results\missing_after.pkl
+[saved pickle] D:\my_workspace\ml_dev\03_»∏±Õ\results\mercari_df_preprocessed.pkl
+6) ≈ÿΩ∫∆Æ ∞·«’/±Ê¿Ã ««√≥
+[saved figure] D:\my_workspace\ml_dev\03_»∏±Õ\results\figures\09_textlen_vs_logprice.png
+7) ««√≥ ∫§≈Õ»≠
+X_name shape: (1482535, 105757)
+X_descp shape: (1482535, 50000)
+X_features_sparse shape: (1482535, 161569)
+∫§≈Õ»≠ º“ø‰ Ω√∞£(√ ): 309.8151648044586
+[saved pickle] D:\my_workspace\ml_dev\03_»∏±Õ\results\X_features_sparse.pkl
+[saved pickle] D:\my_workspace\ml_dev\03_»∏±Õ\results\vectorizers.pkl
+8) train/test split
+[saved pickle] D:\my_workspace\ml_dev\03_»∏±Õ\results\test_index.pkl
+9) Ridge «–Ω¿
+Ridge RMSLE: 0.46523  («–Ω¿Ω√∞£ 36.6s)
+[saved pickle] D:\my_workspace\ml_dev\03_»∏±Õ\results\ridge_model.pkl
+[saved pickle] D:\my_workspace\ml_dev\03_»∏±Õ\results\ridge_pred.pkl
+10) LightGBM «–Ω¿
+[LightGBM] [Info] Auto-choosing row-wise multi-threading, the overhead of testing was 173.729333 seconds.
+You can set `force_row_wise=true` to remove the overhead.
+And if memory is not enough, you can set `force_col_wise=true`.
+[LightGBM] [Info] Total Bins 1068360
+[LightGBM] [Info] Number of data points in the train set: 1186028, number of used features: 65338
+[LightGBM] [Info] Start training from score 2.979514
+LightGBM RMSLE: 0.47498  («–Ω¿Ω√∞£ 934.8s)
+[saved pickle] D:\my_workspace\ml_dev\03_»∏±Õ\results\lgbm_model.pkl
+[saved pickle] D:\my_workspace\ml_dev\03_»∏±Õ\results\lgbm_pred.pkl
+11) ∏µ® ∫Ò±≥ Ω√∞¢»≠
+[saved figure] D:\my_workspace\ml_dev\03_»∏±Õ\results\figures\10_model_rmsle_comparison.png
+[saved pickle] D:\my_workspace\ml_dev\03_»∏±Õ\results\results_summary.pkl
+=== DONE ===
+{'data_shape': (1482535, 14), 'price_skew_before': 11.393232000122508, 'price_skew_after_log': 0.659423201880768, 'no_desc_literal_before': 82489, 'X_features_sparse_shape': (1482535, 161569), 'X_name_shape': (1482535, 105757), 'X_descp_shape': (1482535, 50000), 'n_brand_classes': 4810, 'n_category_main_classes': 11, 'ridge_rmsle': 0.46523402124144064, 'ridge_train_time_sec': 36.564024686813354, 'lgbm_rmsle': 0.47498185953976174, 'lgbm_train_time_sec': 934.8274171352386, 'total_time_sec': 1310.3636603355408}
