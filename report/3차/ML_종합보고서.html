@@ -1,0 +1,1515 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Machine Learning 종합 보고서</title>
+<style>
+:root{
+  --navy:#132349; --navy-deep:#0c1730; --navy-mid:#1a2f5c;
+  --gold:#dd9c34; --gold-soft:#e8b768;
+  --cream:#fdf6e6; --cream-border:#eccf93;
+  --warn-bg:#fdeeea; --warn-border:#e0a08f;
+  --ink:#242424; --gray:#6b6b6b; --gray-soft:#8b8b8b;
+  --line:#e4e0d6; --line-soft:#eeece4;
+  --code-bg:#152341; --code-text:#dbe4f5; --code-key:#7fb0f2; --code-str:#8fd6a8; --code-num:#e8b768;
+  --tag-bg:#f4f2ea; --tag-border:#ddd6c2;
+  --blue:#2a78d6; --red:#e34948; --green:#1baf7a;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:"Malgun Gothic","Segoe UI",sans-serif;
+  color:var(--ink); font-size:10.3pt; line-height:1.62;
+  background:#fdfcf9;
+}
+.page{ position:relative; padding:14mm 16mm 16mm 16mm; min-height:287mm; }
+.page + .page{ break-before:page; page-break-before:always; }
+.nobreak{ break-inside:avoid; page-break-inside:avoid; }
+
+/* ---------- Cover ---------- */
+.cover{
+  background:linear-gradient(160deg,var(--navy-deep) 0%,var(--navy-mid) 100%);
+  color:#fff; padding:26mm 18mm; min-height:287mm; position:relative;
+}
+.cover .eyebrow{ display:flex; align-items:center; gap:10px; color:var(--gold-soft);
+  font-size:9.5pt; letter-spacing:3px; font-weight:700; margin-bottom:14mm;}
+.cover .eyebrow::before{ content:""; width:28px; height:3px; background:var(--gold); display:inline-block;}
+.cover h1{ font-size:32pt; line-height:1.25; font-weight:800; margin:0 0 10mm 0; letter-spacing:-0.5px;}
+.cover .sub{ font-size:11.5pt; color:#cfd8ee; line-height:1.7; max-width:150mm; margin-bottom:12mm;}
+.cover .tags{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14mm;}
+.cover .tag{ border:1px solid rgba(255,255,255,0.35); border-radius:20px; padding:5px 14px; font-size:9pt; color:#e8ecf7;}
+.cover .divider{ border-top:1px solid rgba(255,255,255,0.22); margin:10mm 0;}
+.cover .stats{ display:flex; gap:16mm; flex-wrap:wrap; }
+.cover .stat .num{ font-size:19pt; font-weight:800; color:#fff;}
+.cover .stat .num.gold{ color:var(--gold-soft); }
+.cover .stat .cap{ font-size:8.5pt; color:#aab6d6; margin-top:2px;}
+.cover .footer{ position:absolute; bottom:16mm; left:18mm; right:18mm; display:flex; justify-content:space-between;
+  font-size:8.5pt; color:#96a2c4; border-top:1px solid rgba(255,255,255,0.18); padding-top:6mm;}
+
+/* ---------- TOC ---------- */
+.toc h2{ font-size:19pt; color:var(--navy); margin-bottom:2mm;}
+.toc .lead{ color:var(--gray); font-size:9.5pt; margin-bottom:8mm;}
+.toc-group{ margin-bottom:5mm; }
+.toc-group .g-title{ font-weight:800; color:var(--navy); font-size:11pt; display:flex; justify-content:space-between; border-bottom:2px solid var(--navy); padding-bottom:2mm; margin-bottom:2mm;}
+.toc-row{ display:flex; justify-content:space-between; font-size:9.6pt; padding:1.6mm 0; border-bottom:1px dotted var(--line);}
+.toc-row.sub{ padding-left:6mm; color:var(--gray); font-size:9.1pt;}
+.toc-row .pg{ color:var(--gold); font-weight:700; }
+
+/* ---------- Section header (01~07) ---------- */
+.sec-head{ display:flex; align-items:flex-start; gap:6mm; margin-bottom:8mm; }
+.sec-head .no{ font-size:30pt; font-weight:800; color:var(--gold); line-height:1; }
+.sec-head .tt h2{ font-size:18pt; color:var(--navy); margin:0 0 2mm 0; font-weight:800;}
+.sec-head .tt .desc{ color:var(--gray); font-size:10pt; }
+.sec-head-rule{ border:none; border-top:1.4px solid var(--line); margin:0 0 8mm 0;}
+
+.run-head{ display:flex; justify-content:space-between; font-size:8pt; letter-spacing:1px; color:var(--gray-soft);
+  text-transform:uppercase; border-bottom:1px solid var(--line-soft); padding-bottom:3mm; margin-bottom:9mm;}
+
+h3.subhead{ font-size:12.6pt; color:var(--navy); margin:9mm 0 3mm 0; font-weight:800; display:flex; align-items:center; gap:2.5mm;}
+h3.subhead .bar{ width:4px; height:12px; background:var(--gold); display:inline-block; border-radius:1px;}
+h4.subhead2{ font-size:10.8pt; color:var(--navy); margin:6mm 0 2.5mm 0; font-weight:700;}
+
+p{ margin:0 0 3mm 0; }
+strong{ color:var(--navy); }
+
+/* ---------- Callouts ---------- */
+.callout{ background:var(--cream); border-left:3.5px solid var(--gold); border-radius:3px;
+  padding:4.5mm 6mm; margin:4mm 0; font-size:9.6pt;}
+.callout .lbl{ font-weight:800; color:#a9772a; font-size:9pt; margin-bottom:1.5mm; display:block;}
+.callout.warn{ background:var(--warn-bg); border-left-color:#cc6a55; }
+.callout.warn .lbl{ color:#b24a36; }
+.callout.tip{ background:#eef3fb; border-left-color:var(--blue); }
+.callout.tip .lbl{ color:#1f5aa8; }
+
+/* ---------- Tables ---------- */
+table{ width:100%; border-collapse:collapse; margin:3mm 0 5mm 0; font-size:9.3pt;}
+table caption{ caption-side:top; text-align:left; font-size:8.6pt; color:var(--gray); margin-bottom:1.5mm;}
+thead th{ background:var(--navy); color:#fff; text-align:left; padding:2.6mm 3.2mm; font-weight:700; font-size:9pt;}
+thead th.num, td.num{ text-align:right; }
+tbody td{ padding:2.3mm 3.2mm; border-bottom:1px solid var(--line-soft);}
+tbody tr:nth-child(even){ background:#f8f6f0; }
+tbody tr.hl{ background:#fdf1da; }
+tbody tr.hl td{ font-weight:700; }
+td.mono, th.mono{ font-family:Consolas,monospace; font-size:8.6pt; }
+
+/* ---------- Code ---------- */
+pre.code{ background:var(--code-bg); color:var(--code-text); border-radius:4px; padding:4mm 5mm;
+  font-family:Consolas,"Courier New",monospace; font-size:8.6pt; line-height:1.55; overflow-x:auto; margin:3mm 0 5mm 0; white-space:pre-wrap; word-break:break-word;}
+.badge-tag{ display:inline-block; background:var(--tag-bg); border:1px solid var(--tag-border); border-radius:3px;
+  padding:0.5mm 1.6mm; font-family:Consolas,monospace; font-size:8.6pt; color:#5b4a20;}
+
+/* ---------- Stat tiles ---------- */
+.stat-row{ display:flex; gap:9mm; flex-wrap:wrap; margin:4mm 0 6mm 0; padding:5mm 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line);}
+.stat-row .stat{ min-width:28mm; }
+.stat-row .stat .n{ font-size:15pt; font-weight:800; color:var(--navy); }
+.stat-row .stat .n.gold{ color:var(--gold); }
+.stat-row .stat .c{ font-size:8.3pt; color:var(--gray); margin-top:0.8mm;}
+
+/* ---------- Figures ---------- */
+figure{ margin:4mm 0 6mm 0; }
+figure img{ width:100%; display:block; border:1px solid var(--line); border-radius:3px; }
+figcaption{ font-size:8.7pt; color:var(--gray); margin-top:2mm; }
+figcaption b{ color:var(--navy); }
+.fig-2col{ display:flex; gap:5mm; }
+.fig-2col figure{ flex:1; margin:4mm 0 6mm 0; }
+.insight{ background:#f2f6fb; border-left:3px solid var(--blue); padding:3.2mm 5mm; font-size:9.3pt; margin:2mm 0 5mm 0; border-radius:2px;}
+.insight b{ color:#1f5aa8; }
+
+/* ---------- Pipeline diagram ---------- */
+.pipeline{ display:flex; align-items:center; gap:2mm; margin:5mm 0 7mm 0; flex-wrap:wrap; }
+.pipeline .step{ background:var(--navy); color:#fff; border-radius:5px; padding:3.5mm 3mm; font-size:8.3pt; text-align:center; flex:1; min-width:24mm; font-weight:700; line-height:1.4;}
+.pipeline .arrow{ color:var(--gold); font-weight:800; font-size:11pt; }
+.pipeline .num{ display:inline-block; width:14px; height:14px; border-radius:50%; background:var(--gold); color:#fff; font-size:7.5pt; line-height:14px; margin-bottom:1.5mm;}
+
+ul.clean, ol.clean{ margin:2mm 0 4mm 0; padding-left:5mm; }
+ul.clean li, ol.clean li{ margin-bottom:1.6mm; font-size:9.6pt; }
+
+.two-col{ display:flex; gap:6mm; }
+.two-col > div{ flex:1; }
+
+.small-note{ font-size:8.3pt; color:var(--gray-soft); margin-top:1mm;}
+</style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- COVER -->
+<!-- ============================================================ -->
+<div class="page cover">
+  <div class="eyebrow">MACHINE LEARNING CASE STUDY REPORT</div>
+  <h1>Machine Learning<br>종합 보고서</h1>
+  <div class="sub">
+    Santander Customer Satisfaction · Credit Card Fraud Detection · Opiniosis Opinion Review · Mercari Price Suggestion —
+    4개 캐글(Kaggle) 데이터셋을 대상으로 분류·회귀·비지도 군집화 모델을 적용하고,
+    결과 지표를 실제 의사결정 관점에서 해석한다.
+  </div>
+  <div class="tags">
+    <div class="tag">RandomForest · 불균형 분류</div>
+    <div class="tag">LightGBM · 샘플링 비교</div>
+    <div class="tag">TF-IDF · K-means 군집화</div>
+    <div class="tag">LinearRegression · RMSLE</div>
+  </div>
+  <div class="divider"></div>
+  <div class="stats">
+    <div class="stat"><div class="num">4</div><div class="cap">분석 대상 데이터셋</div></div>
+    <div class="stat"><div class="num gold">76,020~148만</div><div class="cap">데이터셋별 샘플 수</div></div>
+    <div class="stat"><div class="num">RF · LightGBM · KMeans · LinReg</div><div class="cap">담당 핵심 모델</div></div>
+    <div class="stat"><div class="num gold">수치 해석 중심</div><div class="cap">작성 원칙</div></div>
+  </div>
+  <div class="footer">
+    <div>담당 : 염윤호</div>
+    <div>데이터 분석 &amp; 모델링 리포트</div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TOC -->
+<!-- ============================================================ -->
+<div class="page toc">
+  <h2>목차</h2>
+  <div class="lead">코드 진행 순서를 따라 EDA → 전처리 → 모델링 → 결과 해석 순으로 구성했다.</div>
+
+  <div class="toc-group">
+    <div class="g-title"><span>0. 초록</span><span class="pg">p.4</span></div>
+  </div>
+
+  <div class="toc-group">
+    <div class="g-title"><span>1. 서론</span><span class="pg">p.6</span></div>
+    <div class="toc-row sub"><span>1.1 연구 배경 및 필요성</span></div>
+    <div class="toc-row sub"><span>1.2 과제 목적</span></div>
+  </div>
+
+  <div class="toc-group">
+    <div class="g-title"><span>2. Santander Customer Satisfaction</span><span class="pg">p.7</span></div>
+    <div class="toc-row sub"><span>2.1 프로젝트 개요</span></div>
+    <div class="toc-row sub"><span>2.2 결과 지표</span></div>
+    <div class="toc-row sub"><span>2.3 데이터 전처리 &amp; 클리닝</span></div>
+    <div class="toc-row sub"><span>2.4 피처 구조화 &amp; 엔지니어링</span></div>
+    <div class="toc-row sub"><span>2.5 모델링 &amp; 하이퍼파라미터 튜닝</span></div>
+    <div class="toc-row sub"><span>2.6 성능 검증 결과</span></div>
+  </div>
+
+  <div class="toc-group">
+    <div class="g-title"><span>3. Credit Card Fraud Detection</span><span class="pg">p.14</span></div>
+    <div class="toc-row sub"><span>3.1 프로젝트 개요</span></div>
+    <div class="toc-row sub"><span>3.2 결과 지표</span></div>
+    <div class="toc-row sub"><span>3.3 데이터 전처리 &amp; 클리닝</span></div>
+    <div class="toc-row sub"><span>3.4 피처 구조화 &amp; 엔지니어링</span></div>
+    <div class="toc-row sub"><span>3.5 모델링 &amp; 샘플링 전략</span></div>
+    <div class="toc-row sub"><span>3.6 성능 검증 결과</span></div>
+  </div>
+
+  <div class="toc-group">
+    <div class="g-title"><span>4. Opiniosis Opinion / Review</span><span class="pg">p.21</span></div>
+    <div class="toc-row sub"><span>4.1 프로젝트 개요</span></div>
+    <div class="toc-row sub"><span>4.2 결과 지표</span></div>
+    <div class="toc-row sub"><span>4.3 데이터 전처리 &amp; 벡터화</span></div>
+    <div class="toc-row sub"><span>4.4 군집화 방법 비교</span></div>
+    <div class="toc-row sub"><span>4.5 차원 축소(TruncatedSVD) 효과 검증</span></div>
+    <div class="toc-row sub"><span>4.6 성능 검증 결과 &amp; 감성 분석</span></div>
+  </div>
+
+  <div class="toc-group">
+    <div class="g-title"><span>5. Mercari Price Suggestion</span><span class="pg">p.27</span></div>
+    <div class="toc-row sub"><span>5.1 프로젝트 개요</span></div>
+    <div class="toc-row sub"><span>5.2 결과 지표</span></div>
+    <div class="toc-row sub"><span>5.3 데이터 전처리 &amp; 클리닝</span></div>
+    <div class="toc-row sub"><span>5.4 피처 구조화 &amp; 엔지니어링</span></div>
+    <div class="toc-row sub"><span>5.5 모델링 &amp; 하이퍼파라미터 튜닝</span></div>
+    <div class="toc-row sub"><span>5.6 성능 검증 결과</span></div>
+  </div>
+
+  <div class="toc-group">
+    <div class="g-title"><span>6. 회고</span><span class="pg">p.34</span></div>
+  </div>
+  <div class="toc-group">
+    <div class="g-title"><span>7. 참고문헌</span><span class="pg">p.35</span></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 0. 초록 -->
+<!-- ============================================================ -->
+<div class="page">
+  <div class="run-head"><span>ML 종합 보고서</span><span>0 · 초록</span></div>
+  <div class="sec-head">
+    <div class="no">00</div>
+    <div class="tt"><h2>초록</h2><div class="desc">4개 프로젝트의 핵심 결과 요약</div></div>
+  </div>
+  <hr class="sec-head-rule">
+
+  <p>
+    이 보고서는 Kaggle의 4개 데이터셋 — <strong>Santander Customer Satisfaction</strong>(이진 분류),
+    <strong>Credit Card Fraud Detection</strong>(불균형 이진 분류),
+    <strong>Opiniosis Opinion / Review</strong>(비지도 텍스트 군집화),
+    <strong>Mercari Price Suggestion</strong>(회귀) — 에 대해 각각 모델을 학습하고 검증한 결과를 정리한다.
+    담당 모델은 순서대로 <strong>RandomForest</strong>, <strong>LightGBM</strong>, <strong>TF-IDF + K-means</strong>,
+    <strong>LinearRegression</strong>이며, 다른 팀원의 모델 결과는 비교 대상으로만 사용한다.
+  </p>
+
+  <div class="stat-row">
+    <div class="stat"><div class="n">0.8293</div><div class="c">Santander · RandomForest ROC-AUC</div></div>
+    <div class="stat"><div class="n">0.8327</div><div class="c">Credit Card · LightGBM+SMOTE F1-Score</div></div>
+    <div class="stat"><div class="n gold">0.5489</div><div class="c">Opiniosis · Count+KMeans 실루엣 점수</div></div>
+    <div class="stat"><div class="n">0.4818</div><div class="c">Mercari · LinearRegression RMSLE</div></div>
+  </div>
+
+  <p>
+    Santander에서는 극단적으로 불균형한 타깃(불만족 고객 비율 3.96%)을 다뤘다. 정확도(accuracy)는
+    이 조건에서 의미가 없으므로 <strong>ROC-AUC와 재현율(recall)</strong>을 핵심 지표로 채택했다.
+    RandomForest는 임곗값(threshold) 0.05에서 재현율 0.6952를 얻어, 불만족 고객 10명 중 약 7명을
+    사전에 찾아낼 수 있는 수준을 확보했다.
+  </p>
+  <p>
+    Credit Card Fraud Detection에서는 사기 비율이 0.173%에 불과해 언더샘플링·SMOTE·SMOTE-ENN
+    세 가지 샘플링 기법을 <strong>동일한 LightGBM 기본 파라미터</strong>로 공정하게 비교했다. SMOTE가
+    재현율과 정밀도의 균형(F1 0.8327)에서 가장 우수했고, 이를 채택해 사기 거래를 놓치는 손실과
+    정상 거래를 오탐지하는 비용 사이의 균형을 맞췄다.
+  </p>
+  <p>
+    Opiniosis에서는 벡터화(TF-IDF, Count) × 군집화(K-means, DBSCAN) 조합 5가지를 비교했다.
+    Count 벡터 + K-means(k=3)가 실루엣 점수 0.5489로 가장 뚜렷하게 분리됐으며, 군집은 전자기기·
+    자동차·호텔 3개 상품군과 거의 정확히 일치했다. 추가로 TruncatedSVD 적용 여부를 대리 정답
+    기반 외부 평가(ARI/NMI)로 검증한 결과, 이 데이터셋(문서 51개)에서는 차원 축소가 필수가
+    아니라는 결론을 얻었다.
+  </p>
+  <p>
+    Mercari Price Suggestion에서는 약 148만 건의 상품에 대해 가격을 예측했다. LinearRegression은
+    RMSLE 0.4818을 기록했으며, 이는 실제 가격이 $20인 상품을 약 $12.4~$32.3 범위로 예측한다는
+    의미다(§5.6.3 참고). 팀 내 비교에서는 정규화가 적용된 Ridge(RMSLE 0.4791)와 LightGBM
+    (RMSLE 0.4562, 팀원 기록)이 더 낮은 오차를 보였으며, 그 이유를 고차원 희소 피처에서의
+    정규화·비선형성 차이로 분석했다(§5.6.4).
+  </p>
+
+  <div class="callout">
+    <span class="lbl">공통 원칙</span>
+    모든 지표는 해당 코드의 실제 실행 결과에서 가져왔으며, 팀원 간 비교는 <b>total_result.xlsx</b>의
+    담당자별 기록을 근거로 한다. 추정이나 근거 없는 수치는 포함하지 않았다.
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 1. 서론 -->
+<!-- ============================================================ -->
+<div class="page">
+  <div class="run-head"><span>ML 종합 보고서</span><span>1 · 서론</span></div>
+  <div class="sec-head">
+    <div class="no">01</div>
+    <div class="tt"><h2>서론</h2><div class="desc">연구 배경과 과제 목적</div></div>
+  </div>
+  <hr class="sec-head-rule">
+
+  <h3 class="subhead"><span class="bar"></span>1.1 연구 배경 및 필요성</h3>
+  <p>
+    실무에서 데이터 기반 의사결정은 모델을 "돌리는" 단계보다 <strong>결과 지표를 올바르게 해석하는
+    단계</strong>에서 더 자주 실패한다. accuracy가 96%라는 숫자만 보고 좋은 모델이라 판단하면,
+    Santander처럼 불만족 고객이 3.96%뿐인 데이터에서는 모든 고객을 "만족"으로만 찍어도 96%
+    accuracy가 나온다는 함정을 놓치게 된다. 이 보고서는 이러한 함정을 피하기 위해, 데이터셋마다
+    <strong>비즈니스 목적에 맞는 지표를 먼저 선정</strong>하고, 그 지표가 실제로 무엇을 의미하는지
+    구체적인 사례로 풀어 설명하는 것을 원칙으로 삼는다.
+  </p>
+  <p>
+    분석 대상은 성격이 서로 다른 4개 문제다. Santander와 Credit Card는 <strong>이진 분류</strong>이지만
+    불균형 정도가 다르고(3.96% vs 0.173%), Opiniosis는 정답 레이블이 없는 <strong>비지도 군집화</strong>이며,
+    Mercari는 대규모 텍스트·범주형 피처를 다루는 <strong>회귀</strong>다. 문제 유형이 다르면 적합한
+    평가 지표와 전처리 전략도 달라지므로, 각 프로젝트를 독립된 장(章)으로 다루되 동일한 서술
+    구조(개요 → 지표 선정 → 전처리 → 모델링 → 결과 해석)를 적용해 비교 가능성을 유지했다.
+  </p>
+
+  <h3 class="subhead"><span class="bar"></span>1.2 과제 목적</h3>
+  <ul class="clean">
+    <li>4개 데이터셋 각각에 대해 담당 모델을 학습·검증하고, 결과 지표를 산출한다.</li>
+    <li>산출된 지표(ROC-AUC, F1, 실루엣 점수, RMSLE 등)를 <strong>실제 의미로 번역</strong>한다 —
+      "숫자가 얼마다"에서 그치지 않고 "그래서 실무에서 무엇을 할 수 있는가"까지 서술한다.</li>
+    <li>동일 조건에서 비교 가능한 대안(다른 샘플링 기법, 다른 모델, 다른 벡터화 방식)을 함께
+      제시하고, 담당 모델과의 차이가 발생한 원인을 추론한다.</li>
+    <li>전처리·피처 엔지니어링 단계에서 각 파라미터를 조정했을 때 성능이 어떻게 바뀌는지
+      기록하여, 재현 가능하고 근거 있는 튜닝 과정을 남긴다.</li>
+  </ul>
+
+  <div class="callout tip">
+    <span class="lbl">읽는 방법</span>
+    2~5장은 모두 "01 프로젝트 개요 → 02 결과 지표 → 03 전처리 → 04 피처 엔지니어링 →
+    05 모델링 → 06 성능 검증 결과" 순서로 동일하게 구성했다. 지표 자체의 정의보다 <b>왜 그 지표를
+    골랐는지, 숫자가 무엇을 뜻하는지</b>에 각 장의 분량 대부분을 할애했다.
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 2. SANTANDER -->
+<!-- ============================================================ -->
+<div class="page">
+  <div class="run-head"><span>ML 종합 보고서 · Santander Customer Satisfaction</span><span>2 · 프로젝트 개요</span></div>
+  <div class="sec-head">
+    <div class="no">02</div>
+    <div class="tt"><h2>Santander Customer Satisfaction</h2><div class="desc">고객 불만족 여부 예측 — 이진 분류, 극단적 클래스 불균형</div></div>
+  </div>
+  <hr class="sec-head-rule">
+
+  <h3 class="subhead"><span class="bar"></span>2.1 프로젝트 개요</h3>
+  <p>
+    은행 고객의 익명화된 거래·잔고 피처 369개로 <strong>고객 만족 여부(TARGET)</strong>를 예측하는
+    이진 분류 문제다. TARGET=1은 불만족 고객을 뜻하며, 은행 입장에서는 이탈 위험이 있는 고객을
+    미리 찾아내는 것이 목적이다. 담당 모델은 <strong>RandomForestClassifier</strong>다.
+  </p>
+
+  <div class="stat-row">
+    <div class="stat"><div class="n">76,020</div><div class="c">학습 데이터 행(row) 수</div></div>
+    <div class="stat"><div class="n">371</div><div class="c">원본 컬럼 수 (ID+TARGET+369 피처)</div></div>
+    <div class="stat"><div class="n gold">3.96%</div><div class="c">불만족(TARGET=1) 비율</div></div>
+    <div class="stat"><div class="n">0건</div><div class="c">결측치</div></div>
+  </div>
+
+  <h4 class="subhead2">2.1.1 입력 피처 구성</h4>
+  <p>
+    피처는 모두 익명화되어 <span class="badge-tag">ind_*</span>(지표/플래그), <span class="badge-tag">num_*</span>(건수),
+    <span class="badge-tag">imp_*</span>(금액), <span class="badge-tag">saldo_*</span>(잔고), <span class="badge-tag">delta_*</span>(변화량)
+    형태의 접두어와, <span class="badge-tag">ult1/ult3</span>(최근 1개월/3개월), <span class="badge-tag">hace2/hace3</span>(2·3기 이전)
+    같은 접미어 조합으로 이름 붙어 있다. 컬럼명만으로 의미를 알 수는 없지만, 이름 패턴 자체가
+    <strong>동일 지표를 여러 시점에 반복 수집한 시계열형 피처</strong>라는 구조를 보여준다. 이는 뒤에서
+    분산 0인 컬럼과 완전 중복 컬럼이 다수 발견되는 이유와도 연결된다 — 특정 시점 조합에서는
+    값이 전혀 변하지 않는 파생 지표가 반복 생성됐을 가능성이 높다.
+  </p>
+
+  <h4 class="subhead2">2.1.2 EDA 요약 통계 &amp; 2.1.3 결측치 현황</h4>
+  <p>
+    <span class="badge-tag">cust_df.isna().sum()</span> 기준 결측치는 0건이다. 다만 <span class="badge-tag">describe()</span>의
+    최솟값(min) 행을 확인한 결과 <strong>var3의 최솟값이 -999999</strong>로 나타났다. 이는 실제 관측값이
+    아니라 결측을 특정 상수로 치환해 둔 placeholder로 판단하며(§2.3에서 처리), 이런 값이 있는
+    이상 "결측치 0건"이라는 표면적 결과만으로 데이터가 깨끗하다고 볼 수 없다.
+  </p>
+
+  <h4 class="subhead2">2.1.5 동일 값(분산 0)인 Feature &amp; 2.1.6 중복 Feature</h4>
+  <div class="two-col">
+    <div>
+      <p><strong>분산이 0인 컬럼 34개</strong>를 발견했다. 모든 행이 같은 값을 가지므로 모델 학습에
+      아무 정보를 주지 못한다. 예: <span class="badge-tag">ind_var2_0</span>, <span class="badge-tag">num_var27_0</span>,
+      <span class="badge-tag">saldo_var28</span> 등.</p>
+    </div>
+    <div>
+      <p><strong>값이 완전히 동일한 중복 컬럼 29개</strong>를 자체 함수(지문 비교 후 배열 비교)로
+      탐지했다. 예: <span class="badge-tag">ind_var29</span>와 <span class="badge-tag">ind_var29_0</span>,
+      <span class="badge-tag">num_var18</span> 계열 등.</p>
+    </div>
+  </div>
+  <p class="small-note">
+    총 63개 컬럼(분산0 34개 + 중복 29개)을 제거해도 정보 손실이 없다 — 값이 아예 없거나(분산0)
+    다른 컬럼이 이미 동일한 값을 갖고 있기(중복) 때문이다.
+  </p>
+
+  <h4 class="subhead2">2.1.7 타깃 변수(TARGET) 분포 분석</h4>
+  <figure class="nobreak">
+    <img src="report_assets/santander_target.png" alt="TARGET 분포">
+    <figcaption><b>그림 2-1.</b> TARGET 분포 — 만족 73,012건(96.04%) vs 불만족 3,008건(3.96%). 약 24:1 비율의 극단적 불균형.</figcaption>
+  </figure>
+  <div class="insight">
+    <b>해석.</b> 이 비율에서는 "무조건 만족(0)으로 예측"하는 모델도 accuracy 96.04%를 기록한다.
+    즉 accuracy는 이 데이터에서 모델의 실제 판별력을 전혀 반영하지 못하는 지표다. §2.2에서
+    ROC-AUC와 재현율을 핵심 지표로 채택한 이유가 여기서 나온다.
+  </div>
+
+  <h3 class="subhead"><span class="bar"></span>2.2 결과 지표</h3>
+  <h4 class="subhead2">2.2.1 결과 지표 정의 및 선정 근거</h4>
+  <table>
+    <thead><tr><th>지표</th><th>정의</th><th>이 데이터에서의 역할</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">ROC-AUC</td><td>모든 임곗값에서 TPR-FPR 트레이드오프를 종합한 값</td><td>임곗값에 의존하지 않는 <b>모델 자체의 판별력</b> 비교 기준</td></tr>
+      <tr><td class="mono">Recall(재현율)</td><td>실제 불만족 고객 중 모델이 찾아낸 비율</td><td>이탈 위험 고객을 <b>놓치지 않는 것</b>이 핵심이므로 채택</td></tr>
+      <tr><td class="mono">Precision(정밀도)</td><td>불만족으로 예측한 고객 중 실제 불만족 비율</td><td>재현율과의 트레이드오프 확인용 보조 지표</td></tr>
+      <tr><td class="mono">Accuracy</td><td>전체 중 맞춘 비율</td><td>96:4 불균형에서 <b>신뢰할 수 없는 지표</b> — 참고용으로만 병기</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <span class="lbl">선정 근거</span>
+    은행 입장에서는 불만족 고객을 "만족"으로 잘못 분류(False Negative)하면 이탈을 막을 기회
+    자체를 잃는다. 반대로 만족 고객을 "불만족"으로 잘못 분류(False Positive)해도 리텐션
+    캠페인 대상에 한 명 더 포함되는 정도의 비용만 발생한다. 따라서 <b>재현율을 우선 지표로,
+    ROC-AUC를 모델 선택 지표로</b> 삼았다.
+  </div>
+
+  <h4 class="subhead2">2.2.2 결과 지표 해석 계획</h4>
+  <p>
+    RandomForest는 확률 예측값(<span class="badge-tag">predict_proba</span>)을 제공하므로, 기본
+    임곗값(0.5) 대신 <span class="badge-tag">Binarizer</span>로 여러 임곗값(0.01~0.39)을 스캔해
+    재현율·정밀도·F1의 변화를 관찰하고, 실무적으로 타당한 지점을 선택하는 방식을 계획했다.
+  </p>
+
+  <h3 class="subhead"><span class="bar"></span>2.3 데이터 전처리 &amp; 클리닝</h3>
+  <p>세 단계로 진행했다. 각 단계 이후 피처 shape 변화를 함께 기록해 손실 없는 축소임을 확인했다.</p>
+  <table>
+    <thead><tr><th>단계</th><th>처리 내용</th><th>피처 shape</th></tr></thead>
+    <tbody>
+      <tr><td>원본</td><td>ID·TARGET 포함 전체 컬럼</td><td class="mono">(76020, 371)</td></tr>
+      <tr><td>1</td><td><span class="badge-tag">var3: -999999 → 2</span> 치환, <span class="badge-tag">ID</span> 컬럼 제거</td><td class="mono">(76020, 369)</td></tr>
+      <tr><td>2</td><td>분산 0인 컬럼 34개 제거</td><td class="mono">(76020, 335)</td></tr>
+      <tr class="hl"><td>3</td><td>완전 중복 컬럼 29개 제거 → 최종 학습 피처</td><td class="mono">(76020, 306)</td></tr>
+    </tbody>
+  </table>
+  <pre class="code">cust_df["var3"] = cust_df["var3"].replace(-999999, 2)
+cust_df.drop("ID", axis=1, inplace=True)
+# 분산 0 컬럼: stds = X_features.std(); zero_var_cols = stds[stds==0].index
+# 완전 중복 컬럼: (sum,min,max) 지문으로 후보를 좁힌 뒤 배열 값 비교</pre>
+  <p>
+    var3의 -999999는 중앙값이나 평균이 아니라 <strong>2로 치환</strong>했다. var3 값 대부분이
+    작은 정수(국가/지역 코드로 추정)로 몰려 있어, 별도 결측 플래그 없이도 다수값 근처의 값으로
+    옮기는 것이 트리 기반 모델의 분기(split)를 왜곡하지 않는 실용적 선택이다.
+  </p>
+
+  <h3 class="subhead"><span class="bar"></span>2.4 피처 구조화 &amp; 엔지니어링</h3>
+  <p>
+    본 파이프라인에서는 var38(왜도 51.27의 우편향 금액 변수)의 로그 변환이나 var15(추정 연령)
+    구간화 같은 <strong>추가 파생 피처를 만들지 않았다</strong>. total_result.xlsx 비교에서도
+    이 부분이 "X"로 표시돼 있다(§2.6.4 팀원 비교 참고).
+  </p>
+  <figure class="nobreak">
+    <img src="report_assets/santander_var38.png" alt="var38 분포와 로그 변환">
+    <figcaption><b>그림 2-2.</b> var38 원본 분포(왜도 51.27, 극단적 우편향) vs log1p 변환 후(왜도 0.38). 변환하면 정규분포에 가까워진다.</figcaption>
+  </figure>
+  <div class="insight">
+    <b>왜 로그 변환을 적용하지 않았는가.</b> RandomForest는 <b>결정트리 기반 앙상블</b>이라 분기 기준이
+    "값이 어떤 문턱보다 큰가/작은가"이며, 로그 변환처럼 순서를 보존하는 단조 변환은 분기 결과를
+    바꾸지 않는다. 즉 var38의 왜도가 아무리 커도 RF의 분기 능력 자체에는 영향이 없다. 반면
+    LinearRegression·LogisticRegression 같은 선형 모델은 왜도가 큰 피처에 계수가 왜곡되므로
+    로그 변환이 필수에 가깝다 — 실제로 팀원 중 로지스틱 회귀를 사용한 안성준님은 var38에
+    log1p를 적용했다. <b>모델 특성에 따라 전처리 우선순위가 달라지는 사례다.</b>
+  </div>
+
+  <h3 class="subhead"><span class="bar"></span>2.5 모델링 &amp; 하이퍼파라미터 튜닝</h3>
+  <h4 class="subhead2">전처리 단계별 성능 변화 (ablation)</h4>
+  <p>코드에 남아 있는 실행 기록을 단계별로 정리하면, 전처리 단계마다 RF(기본 파라미터) 성능이 다음과 같이 바뀌었다.</p>
+  <table>
+    <thead><tr><th>적용 전처리</th><th class="num">Accuracy</th><th class="num">ROC-AUC</th></tr></thead>
+    <tbody>
+      <tr><td>전처리 없음(원본)</td><td class="num">0.9571</td><td class="num">0.7795</td></tr>
+      <tr><td>var3 치환 + ID 제거만</td><td class="num">0.9521</td><td class="num">0.7508</td></tr>
+      <tr><td>+ 분산 0 컬럼 제거</td><td class="num">0.9526</td><td class="num">0.7513</td></tr>
+      <tr><td>분산 0 컬럼 제거만(var3 미치환)</td><td class="num">0.9568</td><td class="num">0.7800</td></tr>
+      <tr class="hl"><td>분산 0 제거 + 중복 컬럼 제거</td><td class="num">0.9569</td><td class="num">0.7838</td></tr>
+    </tbody>
+  </table>
+  <div class="insight">
+    <b>해석.</b> var3 치환만 단독으로 적용하면 오히려 ROC-AUC가 0.7795→0.7508로 <b>떨어진다</b>.
+    -999999라는 극단값 자체가 (의도와 무관하게) RF에게는 "이 값이면 거의 항상 특정 클래스"라는
+    강한 분기 신호로 작동했을 가능성이 있다. 반면 분산 0·중복 컬럼 제거는 꾸준히 ROC-AUC를
+    개선한다(0.7795→0.7838) — 불필요한 컬럼이 트리의 분기 후보를 늘려 과적합 여지를 만들었기
+    때문으로 해석한다. 즉 <b>모든 전처리가 항상 성능을 높이지는 않으며, 각 단계의 효과를
+    개별적으로 검증해야 한다.</b>
+  </div>
+
+  <h4 class="subhead2">하이퍼파라미터 튜닝 (GridSearchCV)</h4>
+  <pre class="code">params = {
+    'n_estimators': [500],
+    'max_depth': [28, 32, 40],
+    'min_samples_split': [22, 26, 30]
+}
+grid_cv = GridSearchCV(rf_clf, param_grid=params, scoring='roc_auc', cv=2, n_jobs=-1)
+grid_cv.fit(X_train, y_train)
+# 최적 하이퍼 파라미터: {'max_depth': 28, 'min_samples_split': 30, 'n_estimators': 500}
+# 최고 AUC(2-fold CV): 0.8208</pre>
+  <p>
+    탐색 범위는 이전 회차 결과를 반영해 좁혀왔다 — 1차 탐색 AUC 0.8119에서 시작해
+    <span class="badge-tag">max_depth</span>를 16→28로, <span class="badge-tag">min_samples_split</span>을
+    8→22~30 구간으로 점차 옮기며 4차에 걸쳐 AUC를 0.8130 → 0.8171 → 0.8217 수준까지 끌어올렸다.
+    <span class="badge-tag">max_depth</span>를 키울수록(트리를 더 깊게 허용할수록), <span class="badge-tag">min_samples_split</span>을
+    함께 키워 과적합을 억제하는 조합이 이 데이터에서 가장 잘 맞았다.
+  </p>
+  <div class="callout warn">
+    <span class="lbl">참고</span>
+    최종 모델은 GridSearchCV가 찾은 <span class="badge-tag">min_samples_split=30</span> 대신
+    <span class="badge-tag">min_samples_split=22</span>로 재학습했다. 결과로 나온 ROC-AUC 0.8293은
+    GridSearchCV의 2-fold 교차검증 점수(0.8208)보다 오히려 높은데, 이는 서로 다른 데이터
+    분할(교차검증 fold vs 최종 holdout 테스트셋)에서 측정된 값이라 직접 비교 대상이 아니다.
+    두 값 모두 이전 기본 모델(§2.6.2 임곗값 0.5 근방) 대비 개선된 수준이라는 점이 핵심이다.
+  </div>
+
+  <h3 class="subhead"><span class="bar"></span>2.6 성능 검증 결과</h3>
+  <h4 class="subhead2">2.6.1 파이프라인 요약 다이어그램</h4>
+  <div class="pipeline nobreak">
+    <div class="step"><span class="num">1</span><br>원본 로딩<br>(76020, 371)</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">2</span><br>var3 치환<br>+ ID 제거</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">3</span><br>분산0·중복<br>컬럼 제거</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">4</span><br>train/test<br>8:2 분할</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">5</span><br>GridSearchCV<br>튜닝(cv=2)</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">6</span><br>최종 RF 학습<br>+ 임곗값 스캔</div>
+  </div>
+
+  <h4 class="subhead2">2.6.2 지표 결과</h4>
+  <table>
+    <thead><tr><th>임곗값</th><th class="num">정확도</th><th class="num">정밀도</th><th class="num">재현율</th><th class="num">F1</th><th class="num">ROC-AUC</th></tr></thead>
+    <tbody>
+      <tr><td>0.01</td><td class="num">0.3891</td><td class="num">0.0595</td><td class="num">0.9654</td><td class="num">0.1120</td><td class="num">0.8293</td></tr>
+      <tr class="hl"><td>0.05 (채택)</td><td class="num">0.8074</td><td class="num">0.1333</td><td class="num">0.6952</td><td class="num">0.2238</td><td class="num">0.8293</td></tr>
+      <tr><td>0.10</td><td class="num">0.8764</td><td class="num">0.1646</td><td class="num">0.5140</td><td class="num">0.2493</td><td class="num">0.8293</td></tr>
+      <tr><td>0.20</td><td class="num">0.9419</td><td class="num">0.2172</td><td class="num">0.1746</td><td class="num">0.1936</td><td class="num">0.8293</td></tr>
+      <tr><td>0.39</td><td class="num">0.9600</td><td class="num">0.4000</td><td class="num">0.0033</td><td class="num">0.0065</td><td class="num">0.8293</td></tr>
+    </tbody>
+  </table>
+  <figure class="nobreak">
+    <img src="report_assets/santander_threshold.png" alt="임곗값별 정밀도-재현율-F1">
+    <figcaption><b>그림 2-3.</b> 임곗값에 따른 정밀도·재현율·F1 변화. 임곗값이 높아질수록(=더 확신할 때만 불만족으로 판정) 재현율은 급격히 떨어지고 정밀도는 오른다.</figcaption>
+  </figure>
+
+  <h4 class="subhead2">2.6.3 지표 해석</h4>
+  <div class="insight">
+    <b>임곗값 0.05를 채택한 이유.</b> 테스트셋(15,204명) 중 실제 불만족 고객은 607명이다.
+    임곗값 0.05에서는 이 중 422명(재현율 69.52%)을 찾아내고, 대신 2,743명의 만족 고객을
+    "불만족 위험"으로 잘못 분류한다(정밀도 13.33%). <b>즉 불만족 위험군으로 분류된 10명 중
+    실제 이탈 위험 고객은 약 1.3명뿐이지만, 실제 이탈 위험 고객 10명 중 7명 가까이는 놓치지
+    않고 찾아낸다.</b> 리텐션 캠페인처럼 targeting 비용이 낮고 놓쳤을 때 손실이 큰 상황에서는
+    이 트레이드오프가 합리적이다.
+  </div>
+  <p>
+    반대로 임곗값을 0.39까지 높이면 정밀도는 0.40으로 오르지만 재현율은 <strong>0.0033</strong>까지
+    떨어진다 — 즉 이탈 위험 고객 607명 중 단 2명만 찾아낸다. 기본 임곗값(0.5)에 가까운 이
+    영역에서 모델을 그대로 쓰면, ROC-AUC가 0.8293으로 나쁘지 않음에도 실무적으로는 "아무것도
+    하지 않는 모델"과 다를 바 없다. <strong>ROC-AUC가 높다고 해서 기본 임곗값이 적절하다는
+    뜻은 아니라는 것</strong>이 이 데이터가 주는 가장 중요한 교훈이다.
+  </p>
+
+  <h4 class="subhead2">2.6.4 모델별 결과 비교 및 추론</h4>
+  <figure class="nobreak">
+    <img src="report_assets/santander_model_compare.png" alt="Santander 모델 5종 비교">
+    <figcaption><b>그림 2-4.</b> 담당(염윤호) 시도 모델 5종 비교. 각 모델은 서로 다른 임곗값에서 측정된 값이다(출처: total_result.xlsx).</figcaption>
+  </figure>
+  <table>
+    <thead><tr><th>모델</th><th class="num">Accuracy</th><th class="num">ROC-AUC</th><th class="num">Recall</th><th class="num">F1</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr class="hl"><td>RandomForest (채택)</td><td class="num">0.8074</td><td class="num">0.8293</td><td class="num">0.6952</td><td class="num">0.2238</td><td>임곗값 0.05</td></tr>
+      <tr><td>LogisticRegression</td><td class="num">0.6191</td><td class="num">0.8032</td><td class="num">0.8206</td><td class="num">0.1457</td><td>-</td></tr>
+      <tr><td>LightGBM</td><td class="num">0.6267</td><td class="num">0.8408</td><td class="num">0.8722</td><td class="num">0.1631</td><td>-</td></tr>
+      <tr><td>GradientBoost</td><td class="num">0.8909</td><td class="num">0.8386</td><td class="num">0.5041</td><td class="num">0.2695</td><td>임곗값 0.1</td></tr>
+      <tr><td>XGBoost</td><td class="num">0.8086</td><td class="num">0.8520</td><td class="num">0.7409</td><td class="num">0.2346</td><td>임곗값 0.05</td></tr>
+    </tbody>
+  </table>
+  <div class="insight">
+    <b>XGBoost가 ROC-AUC 최고(0.8520)를 기록한 이유.</b> XGBoost는 2차 도함수(hessian)까지
+    활용하는 gradient boosting 방식으로, RandomForest의 배깅(bagging, 독립적인 트리들의 평균)보다
+    잔차를 순차적으로 보정하는 방식이 이런 고차원·희소 신호 데이터에서 조금 더 정교하게
+    맞아떨어진 것으로 판단한다. 다만 그 차이(0.8520 vs 0.8293)는 크지 않다.<br><br>
+    <b>LogisticRegression·LightGBM이 재현율만 유독 높은 이유.</b> 두 모델은 accuracy가 0.62~0.63으로
+    가장 낮다 — 이는 매우 낮은 임곗값을 채택해 "불만족 가능성이 조금이라도 있으면 전부
+    잡아낸다"는 전략을 쓴 결과로 보인다(정밀도를 크게 희생). RandomForest(채택)는 재현율
+    0.6952로 상대적으로 균형 잡힌 지점을 택했다.<br><br>
+    <b>GradientBoost는 accuracy·F1이 가장 높지만 재현율이 가장 낮다(0.5041).</b> 임곗값을
+    0.1로, 다른 모델보다 높게 설정했기 때문이다 — "정밀하게 맞히는" 쪽에 무게를 둔 선택이며,
+    이 프로젝트의 목적(이탈 위험 고객을 놓치지 않는 것)과는 반대 방향의 트레이드오프다.
+    <b>따라서 ROC-AUC나 accuracy만으로 "가장 좋은 모델"을 고르면 안 되고, 채택한 임곗값까지
+    함께 봐야 공정한 비교가 된다.</b>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 3. CREDIT CARD -->
+<!-- ============================================================ -->
+<div class="page">
+  <div class="run-head"><span>ML 종합 보고서 · Credit Card Fraud Detection</span><span>3 · 프로젝트 개요</span></div>
+  <div class="sec-head">
+    <div class="no">03</div>
+    <div class="tt"><h2>Credit Card Fraud Detection</h2><div class="desc">신용카드 사기 거래 탐지 — 이진 분류, 초극단적 클래스 불균형</div></div>
+  </div>
+  <hr class="sec-head-rule">
+
+  <h3 class="subhead"><span class="bar"></span>3.1 프로젝트 개요</h3>
+  <p>
+    28개의 PCA(주성분분석) 변환 변수(V1~V28)와 거래 시각(Time), 거래 금액(Amount)으로
+    <strong>사기 거래 여부(Class)</strong>를 예측하는 이진 분류 문제다. 담당 모델은
+    <strong>LightGBM</strong>이며, 언더샘플링·SMOTE·SMOTE-ENN 세 샘플링 기법의 효과를 동일 조건에서
+    비교하는 것이 이 프로젝트의 핵심 과제다.
+  </p>
+
+  <div class="stat-row">
+    <div class="stat"><div class="n">284,807</div><div class="c">전체 거래 건수</div></div>
+    <div class="stat"><div class="n">31</div><div class="c">컬럼 수 (Time+V1~V28+Amount+Class)</div></div>
+    <div class="stat"><div class="n gold">0.173%</div><div class="c">사기(Class=1) 비율</div></div>
+    <div class="stat"><div class="n">0건</div><div class="c">결측치</div></div>
+  </div>
+
+  <h4 class="subhead2">3.1.1 입력 피처 구성 &amp; 3.1.4 Feature 이름 특징</h4>
+  <p>
+    <span class="badge-tag">V1~V28</span>은 원본 거래 정보(가맹점, 위치, 카드 종류 등 민감 정보 포함
+    가능성이 있는 항목)를 PCA로 변환한 익명 연속형 변수다. PCA로 생성된 축이므로 이름 자체에는
+    의미가 없지만, <strong>서로 직교(orthogonal)하도록 구성</strong>된다는 성질은 보장된다 — 즉
+    V1~V28 사이에는 구조적으로 동일 컬럼이나 완전한 선형 중복이 나타날 수 없다. <span class="badge-tag">Time</span>은
+    첫 거래 이후 경과 초, <span class="badge-tag">Amount</span>는 거래 금액(달러)이다.
+  </p>
+
+  <h4 class="subhead2">3.1.2 EDA 요약 통계 &amp; 3.1.3 결측치 현황</h4>
+  <p>
+    결측치는 0건이다(<span class="badge-tag">card_df.isna().sum().sum() == 0</span>). Amount는
+    최소 $0 ~ 최대 $25,691로 범위가 매우 넓고, <span class="badge-tag">describe()</span>의 표준편차(std) 값
+    목록을 확인한 결과 표준편차가 0인 컬럼(=분산 0인 컬럼)은 없었다.
+  </p>
+
+  <h4 class="subhead2">3.1.5~3.1.6 동일 값 · 중복 Feature</h4>
+  <p>
+    <span class="badge-tag">card_df.describe().loc["std",:].unique()</span> 결과 모든 컬럼의
+    표준편차가 서로 다른 고유값이었다 — <strong>분산 0인 컬럼과 완전 중복 컬럼 모두 없음</strong>을
+    확인했다. Santander와 달리 이 데이터셋은 PCA로 사전 압축된 피처라 정보 중복이 구조적으로
+    제거되어 있다.
+  </p>
+
+  <h4 class="subhead2">3.1.7 타깃 변수(Class) 분포 분석</h4>
+  <figure class="nobreak">
+    <img src="report_assets/credit_target.png" alt="Class 분포">
+    <figcaption><b>그림 3-1.</b> Class 분포(로그 스케일) — 정상 284,315건(99.827%) vs 사기 492건(0.173%). 약 578:1 비율.</figcaption>
+  </figure>
+  <div class="insight">
+    <b>해석.</b> Santander(24:1)보다 100배 이상 심한 불균형이다. 이 정도 비율에서는 ROC-AUC조차
+    낙관적으로 보일 수 있다 — 음성(정상) 클래스가 압도적으로 많으면 거짓 양성 비율(FPR)의
+    분모가 매우 커져 어지간한 오분류로는 FPR이 잘 오르지 않기 때문이다. 그래서 이 프로젝트에서는
+    ROC-AUC와 함께 <strong>AUPRC(정밀도-재현율 곡선의 면적)</strong>를 반드시 함께 본다(§3.2).
+  </div>
+
+  <h3 class="subhead"><span class="bar"></span>3.2 결과 지표</h3>
+  <h4 class="subhead2">3.2.1 결과 지표 정의 및 선정 근거</h4>
+  <table>
+    <thead><tr><th>지표</th><th>정의</th><th>이 데이터에서의 역할</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">Recall(재현율)</td><td>실제 사기 중 모델이 찾아낸 비율</td><td><b>최우선 지표</b> — 놓친 사기는 그대로 금전 손실</td></tr>
+      <tr><td class="mono">Precision(정밀도)</td><td>사기로 예측한 것 중 실제 사기 비율</td><td>너무 낮으면 정상 거래 차단·고객 불편 급증</td></tr>
+      <tr><td class="mono">F1-Score</td><td>정밀도·재현율의 조화평균</td><td>재현율만 극단적으로 높이는 것을 견제하는 균형 지표</td></tr>
+      <tr><td class="mono">ROC-AUC</td><td>전체 임곗값에서의 TPR-FPR 트레이드오프</td><td>모델 판별력 비교(단독으로는 과대평가 위험)</td></tr>
+      <tr><td class="mono">AUPRC</td><td>Precision-Recall 곡선의 면적</td><td>극단적 불균형에서 <b>ROC-AUC를 보완</b>하는 핵심 지표</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <span class="lbl">이 프로젝트의 핵심 의도</span>
+    정밀도와 재현율 중에서는 <b>재현율을 우선</b>했다. 카드 사기가 실제로 발생했는데도 모델이
+    이를 탐지하지 못하는 경우(False Negative)가 정상 거래를 사기로 오탐지하는 경우(False
+    Positive)보다 훨씬 큰 손실을 낳기 때문이다. 오탐지는 고객에게 재확인을 요청하는 정도의
+    비용이지만, 탐지 실패는 실제 금전 피해로 직결된다.
+  </div>
+
+  <h4 class="subhead2">3.2.2 결과 지표 해석 계획</h4>
+  <p>
+    하이퍼파라미터 튜닝의 기준 지표로는 accuracy 대신 <span class="badge-tag">average_precision
+    (AUPRC)</span>를 사용했다. threshold 조정은 튜닝 이후 별도로 진행하므로, 튜닝 단계에서는
+    임곗값에 의존하지 않는 지표로 샘플링 기법 간 우열을 가리는 방식을 계획했다.
+  </p>
+
+  <h3 class="subhead"><span class="bar"></span>3.3 데이터 전처리 &amp; 클리닝</h3>
+  <table>
+    <thead><tr><th>처리</th><th>내용</th><th>근거</th></tr></thead>
+    <tbody>
+      <tr><td>Time 제거</td><td>거래 순번성 정보로 사기 여부와 직접 관련 없음</td><td>노이즈 제거</td></tr>
+      <tr><td>Amount 로그 변환</td><td><span class="mono badge-tag">log1p(Amount)</span> → Amount_Scaled</td><td>금액 분포 왜도 완화</td></tr>
+      <tr><td>V14 이상치 제거</td><td>사기(Class=1) 데이터의 V14 IQR×1.5 범위 밖 값 제거</td><td>사기 클래스 내에서도 가장 상관관계가 큰 변수의 잡음 축소</td></tr>
+    </tbody>
+  </table>
+  <pre class="code">def get_preprocessed_df(df):
+    df_copy = df.copy()
+    amount_n = np.log1p(df_copy['Amount'])
+    df_copy.insert(0, 'Amount_Scaled', amount_n)
+    df_copy.drop(['Time','Amount'], axis=1, inplace=True)
+    return df_copy
+
+# train/test 분할 이후, 각각에 대해 개별적으로 V14 이상치 제거 (분할 전 제거 시 정보 누수 위험)</pre>
+  <div class="fig-2col">
+    <figure class="nobreak"><img src="report_assets/credit_amount.png" alt="Amount 분포"><figcaption><b>그림 3-2.</b> Amount 원본(왜도 16.98) vs log1p 변환 후(왜도 0.16).</figcaption></figure>
+  </div>
+  <div class="callout warn">
+    <span class="lbl">왜 train/test 분할 이후에 이상치를 제거하는가</span>
+    V14 이상치 탐지 기준(사분위수)을 <b>전체 데이터로 먼저 계산하면, 테스트셋의 정보가 학습
+    과정에 스며드는 데이터 누수(leakage)</b>가 된다. 이 코드는 <span class="badge-tag">train_test_split</span>으로
+    먼저 나눈 뒤, train과 test 각각에서 독립적으로 이상치 기준을 계산해 제거한다 — 실제 운영
+    환경에서 테스트 데이터(미래 거래)를 미리 알 수 없는 상황을 그대로 재현한 것이다.
+  </div>
+
+  <h3 class="subhead"><span class="bar"></span>3.4 피처 구조화 &amp; 엔지니어링</h3>
+  <p>
+    V1~V28은 이미 PCA로 압축된 피처라 추가 파생 변수를 만들지 않았다. 이 프로젝트에서 실질적인
+    "피처 엔지니어링"에 해당하는 작업은 <strong>클래스 불균형을 보정하는 샘플링 전략 선택</strong>이며,
+    이는 모델링과 결합되므로 §3.5에서 함께 다룬다.
+  </p>
+
+  <h3 class="subhead"><span class="bar"></span>3.5 모델링 &amp; 샘플링 전략</h3>
+  <table>
+    <thead><tr><th>기법</th><th>방식</th><th>학습 데이터 변화</th></tr></thead>
+    <tbody>
+      <tr><td><b>언더샘플링</b></td><td>정상 거래를 사기 건수만큼 무작위로 축소</td><td class="mono">199,362건 → 684건</td></tr>
+      <tr><td><b>SMOTE</b></td><td>사기 샘플 주변에 합성 데이터를 생성해 오버샘플링</td><td class="mono">199,362건 → 398,040건</td></tr>
+      <tr><td><b>SMOTE-ENN</b></td><td>SMOTE 이후 경계가 모호한 샘플을 ENN으로 추가 제거</td><td class="mono">199,362건 → 397,717건</td></tr>
+    </tbody>
+  </table>
+  <p>
+    세 기법 모두 <strong>train 데이터에만</strong> 적용했다. 원본 코드에는 세 기법을 LightGBM
+    기본 파라미터로 비교한 실행 기록이 남아 있으며, 그 결과는 §3.6.4에서 다룬다.
+  </p>
+
+  <h4 class="subhead2">GridSearchCV 튜닝 (SMOTE, 파이프라인 내 결합)</h4>
+  <pre class="code">smote_pipeline = ImbPipeline([
+    ('sampler', SMOTE(random_state=42)),
+    ('classifier', LGBMClassifier(n_estimators=1000, n_jobs=1, boost_from_average=False))
+])
+lgbm_smote_grid = GridSearchCV(smote_pipeline, param_grid={
+    'classifier__num_leaves': [31, 64], 'classifier__max_depth': [-1, 7],
+    'classifier__learning_rate': [0.05, 0.1]
+}, cv=StratifiedKFold(n_splits=5, shuffle=True, random_state=42), scoring='average_precision', n_jobs=-1)
+# Best Params: learning_rate=0.05, max_depth=-1, num_leaves=64
+# Best CV AUPRC: 0.8673</pre>
+  <div class="callout tip">
+    <span class="lbl">왜 SMOTE를 Pipeline 안에 넣었는가</span>
+    SMOTE를 교차검증 <b>이전에</b> 전체 학습 데이터에 미리 적용하면, 검증 폴드(fold)에도 합성
+    샘플의 "형제 데이터"가 섞여 들어가 성능이 부풀려진다. <span class="badge-tag">imblearn.pipeline.Pipeline</span>으로
+    감싸면 각 CV 폴드마다 <b>그 폴드의 학습 부분에만</b> SMOTE가 적용되어, 검증 폴드는 항상
+    원본 그대로 유지된다 — 누수를 막는 표준적인 방법이다.
+  </div>
+
+  <h3 class="subhead"><span class="bar"></span>3.6 성능 검증 결과</h3>
+  <h4 class="subhead2">3.6.1 파이프라인 요약 다이어그램</h4>
+  <div class="pipeline nobreak">
+    <div class="step"><span class="num">1</span><br>Time 제거<br>Amount log1p</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">2</span><br>train/test<br>7:3 분할(stratify)</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">3</span><br>V14 이상치<br>개별 제거</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">4</span><br>SMOTE<br>(train만)</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">5</span><br>LightGBM<br>GridSearchCV</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">6</span><br>최종 학습<br>+ 홀드아웃 평가</div>
+  </div>
+
+  <h4 class="subhead2">3.6.2 지표 결과 (채택 파이프라인: LightGBM + SMOTE, 튜닝 후)</h4>
+  <table>
+    <thead><tr><th>모델</th><th class="num">Accuracy</th><th class="num">Precision</th><th class="num">Recall</th><th class="num">F1</th><th class="num">ROC-AUC</th><th class="num">AUPRC</th></tr></thead>
+    <tbody>
+      <tr class="hl"><td>LightGBM + SMOTE (채택, 튜닝 후)</td><td class="num">0.9994</td><td class="num">0.8731</td><td class="num">0.7959</td><td class="num">0.8327</td><td class="num">0.9720</td><td class="num">0.8342</td></tr>
+    </tbody>
+  </table>
+  <p class="small-note">혼동행렬: TN=85,278 · FP=17 · FN=30 · TP=117 (테스트셋 사기 147건 중 117건 탐지)</p>
+
+  <h4 class="subhead2">3.6.3 지표 해석</h4>
+  <div class="insight">
+    <b>재현율 0.7959의 의미.</b> 테스트셋에는 사기 거래가 147건 있다. 채택한 모델은 이 중
+    <b>117건(79.6%)을 탐지</b>하고 30건을 놓친다. 동시에 정상 거래 85,295건 중 단 17건만
+    사기로 오탐지한다(정밀도 0.8731) — 오탐지로 인한 고객 불편이 매우 제한적이라는 뜻이다.
+    §3.2에서 재현율을 우선한다고 밝혔지만, 실제로는 <b>정밀도도 87%로 높게 유지</b>하면서
+    재현율을 확보했다는 점이 이 파이프라인(SMOTE + 튜닝된 LightGBM)의 강점이다.
+  </div>
+  <p>
+    ROC-AUC(0.9720)만 보면 매우 높아 보이지만, AUPRC(0.8342)는 상대적으로 낮다 — 이는
+    §3.1.7에서 설명한 대로 극단적 불균형에서 ROC-AUC가 실제보다 낙관적으로 보이는 현상을
+    보여주는 구체적 사례다. <strong>이 데이터셋에서는 AUPRC가 ROC-AUC보다 모델 성능을 더
+    보수적이고 현실적으로 보여준다.</strong>
+  </p>
+
+  <h4 class="subhead2">3.6.4 모델별 결과 비교 및 추론</h4>
+  <p><b>(1) 샘플링 기법별 비교</b> — LightGBM 기본 파라미터(튜닝 전)로 통일해 세 기법만 바꿔 비교했다. 이렇게 해야 "샘플링 기법의 순수한 효과"를 비교할 수 있다.</p>
+  <figure class="nobreak">
+    <img src="report_assets/credit_sampling_compare.png" alt="샘플링 기법별 비교">
+    <figcaption><b>그림 3-3.</b> LightGBM 고정, 샘플링 기법별 비교(튜닝 전 동일 조건).</figcaption>
+  </figure>
+  <table>
+    <thead><tr><th>샘플링</th><th class="num">Accuracy</th><th class="num">Precision</th><th class="num">Recall</th><th class="num">F1</th><th class="num">AUC</th><th class="num">AUPRC</th></tr></thead>
+    <tbody>
+      <tr><td>언더샘플링</td><td class="num">0.9695</td><td class="num">0.0478</td><td class="num">0.8844</td><td class="num">0.0906</td><td class="num">0.9777</td><td class="num">0.6689</td></tr>
+      <tr><td>SMOTE(튜닝 전)</td><td class="num">0.9994</td><td class="num">0.8731</td><td class="num">0.7959</td><td class="num">0.8327</td><td class="num">0.9697</td><td class="num">0.8274</td></tr>
+      <tr><td>SMOTE-ENN</td><td class="num">0.9992</td><td class="num">0.7453</td><td class="num">0.8163</td><td class="num">0.7792</td><td class="num">0.9739</td><td class="num">0.8059</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn">
+    <span class="lbl">공정한 비교를 위한 전제</span>
+    위 표는 세 기법 모두 <b>튜닝 전(기본 파라미터) LightGBM</b> 기준이다. §3.6.2의 "채택" 결과는
+    SMOTE에 GridSearchCV 튜닝까지 적용한 값(F1 0.8327 → 동일하지만 AUC/AUPRC는 0.9697→0.9720,
+    0.8274→0.8342로 소폭 상승)이라 언더샘플링·SMOTE-ENN과 직접 비교하면 <b>튜닝 여부가 섞여
+    불공정한 비교</b>가 된다. 이 표에서는 그 문제를 피하기 위해 SMOTE도 튜닝 전 값을 사용했다.
+  </div>
+  <div class="insight">
+    <b>언더샘플링은 왜 재현율이 가장 높은데(0.8844) 정밀도가 극단적으로 낮은가(0.0478).</b>
+    학습 데이터를 684건까지 줄이면서 정상 거래 정보 대부분을 버렸다. 모델이 "사기 패턴"을
+    공격적으로 학습해 재현율은 높지만, 실제 운영에서는 정상 거래 20건 중 1건꼴로 사기 경보가
+    울리는 셈이라 실용성이 떨어진다. <b>SMOTE</b>는 정상 거래 정보를 보존하면서 사기 샘플만
+    합성으로 늘려, 정밀도(0.8731)와 재현율(0.7959)의 균형이 가장 좋다. <b>SMOTE-ENN</b>은
+    SMOTE보다 재현율은 근소하게 높지만(0.8163) 정밀도가 크게 낮다(0.7453) — 경계 샘플을
+    추가로 제거하는 ENN 단계가 정상 거래처럼 보이는 사기 샘플까지 학습에서 덜어내며 결정
+    경계를 사기 쪽으로 더 넓힌 것으로 해석된다. <b>종합적으로 F1 기준에서는 SMOTE가 가장
+    우수해 채택했다.</b>
+  </div>
+
+  <p><b>(2) 팀원별 모델 비교</b> — total_result.xlsx 기준, 담당자 염윤호가 SMOTE 적용 조건에서 시도한 5개 모델이다.</p>
+  <figure class="nobreak">
+    <img src="report_assets/credit_model_compare.png" alt="Credit Card 모델 5종 비교">
+    <figcaption><b>그림 3-4.</b> 담당(염윤호) 시도 모델 5종 비교(SMOTE 적용). 출처: total_result.xlsx.</figcaption>
+  </figure>
+  <table>
+    <thead><tr><th>모델</th><th class="num">Accuracy</th><th class="num">ROC-AUC</th><th class="num">Recall</th><th class="num">F1</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr class="hl"><td>LightGBM (채택)</td><td class="num">0.9994</td><td class="num">0.9719</td><td class="num">0.7959</td><td class="num">0.8327</td><td>-</td></tr>
+      <tr><td>XGBoost</td><td class="num">0.9993</td><td class="num">0.9771</td><td class="num">0.8163</td><td class="num">0.8219</td><td>-</td></tr>
+      <tr><td>RandomForest</td><td class="num">0.9994</td><td class="num">0.9854</td><td class="num">0.8367</td><td class="num">0.7910</td><td>threshold 0.305, AUPRC 0.8314</td></tr>
+      <tr><td>GradientBoost</td><td class="num">0.9993</td><td class="num">0.9749</td><td class="num">0.7346</td><td class="num">0.7854</td><td>-</td></tr>
+      <tr><td>LogisticRegression</td><td class="num">0.9993</td><td class="num">0.9675</td><td class="num">0.7619</td><td class="num">0.8057</td><td>-</td></tr>
+    </tbody>
+  </table>
+  <div class="insight">
+    <b>RandomForest가 ROC-AUC 최고(0.9854)를 기록한 이유.</b> 이 표의 RandomForest 값은 기본
+    임곗값이 아니라, 최대 F1 지점 대비 F1 하락폭을 5% 이내로 제한하면서 재현율을 최대화하는
+    임곗값(0.305)을 별도로 탐색한 결과다. RandomForest는 여러 트리의 확률을 평균화하는 구조라
+    확률 추정이 부드럽고 안정적이어서, 이런 임곗값 재탐색을 통한 재현율-정밀도 재조정 여지가
+    LightGBM보다 크게 남아 있었다. 다만 F1(0.7910)은 채택한 LightGBM(0.8327)보다 낮다 —
+    <b>ROC-AUC가 가장 높은 모델이 F1 기준 최적 모델과 반드시 같지는 않다</b>는 것을 보여주는
+    사례다.<br><br>
+    <b>LogisticRegression·GradientBoost는 재현율이 상대적으로 낮다(0.76, 0.73).</b> 두 모델
+    모두 선형 결정경계 또는 얕은 트리 위주 구조라, SMOTE로 늘어난 사기 샘플의 국소적(local)
+    패턴을 LightGBM만큼 세밀하게 분리하지 못한 것으로 판단한다. <b>종합적으로 LightGBM은
+    정밀도·재현율의 균형(F1 0.8327 최고)에서 가장 우수해 채택 근거가 명확하다.</b>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 4. OPINIOSIS -->
+<!-- ============================================================ -->
+<div class="page">
+  <div class="run-head"><span>ML 종합 보고서 · Opiniosis Opinion / Review</span><span>4 · 프로젝트 개요</span></div>
+  <div class="sec-head">
+    <div class="no">04</div>
+    <div class="tt"><h2>Opiniosis Opinion / Review</h2><div class="desc">상품 리뷰 문서 군집화 — 비지도 학습, 정답 레이블 없음</div></div>
+  </div>
+  <hr class="sec-head-rule">
+
+  <h3 class="subhead"><span class="bar"></span>4.1 프로젝트 개요</h3>
+  <p>
+    51개 텍스트 파일 각각은 특정 상품·서비스의 한 측면(aspect)에 대한 리뷰 문장 모음이다
+    (예: <span class="badge-tag">battery-life_ipod_nano_8gb</span>, <span class="badge-tag">rooms_swissotel_chicago</span>).
+    사전 레이블이 없는 <strong>비지도 학습</strong> 문제이며, 목적은 비슷한 리뷰 문서끼리 자동으로
+    묶어 상품군별 특징을 파악하는 것이다. 담당 방법은 <strong>TF-IDF/Count 벡터화 + K-means/DBSCAN
+    군집화</strong>이며, 부가적으로 VADER 감성 분석을 결합했다.
+  </p>
+
+  <div class="stat-row">
+    <div class="stat"><div class="n">51</div><div class="c">리뷰 문서(파일) 수</div></div>
+    <div class="stat"><div class="n">5</div><div class="c">벡터화×군집화 비교 조합 수</div></div>
+    <div class="stat"><div class="n gold">0.5489</div><div class="c">최고 실루엣 점수(Count+KMeans)</div></div>
+    <div class="stat"><div class="n">3</div><div class="c">대리 정답 상품군(전자기기·자동차·호텔)</div></div>
+  </div>
+
+  <h4 class="subhead2">4.1.1 입력 피처 구성 &amp; 4.1.4 Feature 이름 특징</h4>
+  <p>
+    각 문서는 <span class="badge-tag">filename</span>과 파일 내 모든 문장을 이어 붙인
+    <span class="badge-tag">opinion_text</span> 컬럼으로 구성된다. 파일명은
+    <span class="badge-tag">{주제(aspect)}_{대상(product)}</span> 구조를 따른다 — 예를 들어
+    <span class="badge-tag">battery-life_amazon_kindle</span>은 "아마존 킨들의 배터리 수명"에 대한
+    리뷰다. 이 구조를 활용해 대상(product)을 3개 상품군(전자기기·자동차·호텔)으로 매핑한
+    <strong>대리 정답(proxy label)</strong>을 만들어 §4.5 외부 평가에 사용했다.
+  </p>
+
+  <h4 class="subhead2">4.1.2 EDA 요약 통계 &amp; 4.1.3 결측치 현황</h4>
+  <p>
+    51개 파일 모두 정상적으로 로드되어 결측치 개념이 해당하지 않는다. 대리 정답 기준으로
+    집계하면 <strong>전자기기 25건, 호텔 16건, 자동차 10건</strong>이며, 더 세부적인 주제(aspect)
+    기준으로는 <strong>고유 35개</strong> 카테고리가 존재한다(예: battery-life, screen, room,
+    mileage 등).
+  </p>
+
+  <h4 class="subhead2">4.1.5 표기 불일치 사례</h4>
+  <p>
+    이 데이터셋에는 "동일 값 컬럼"이나 "중복 컬럼" 개념이 없는 대신, <strong>같은 대상을 가리키지만
+    파일명 표기가 다른 사례</strong>가 있었다 — <span class="badge-tag">netbook_1005ha</span>와
+    <span class="badge-tag">asus_netbook_1005ha</span>, <span class="badge-tag">swissotel_chicago</span>와
+    <span class="badge-tag">swissotel_hotel_chicago</span>가 각각 동일 대상이다. 대리 정답을 만들
+    때 이 표기를 통일해 정답의 정확도를 보장했다.
+  </p>
+
+  <h3 class="subhead"><span class="bar"></span>4.2 결과 지표</h3>
+  <table>
+    <thead><tr><th>지표</th><th>정의</th><th>이 데이터에서의 역할</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">실루엣 점수</td><td>같은 군집 내 응집도 대비 다른 군집과의 분리도(-1~1)</td><td>정답 없이 <b>군집 품질 자체</b>를 평가하는 1차 지표</td></tr>
+      <tr><td class="mono">ARI / NMI</td><td>군집 결과와 대리 정답(상품군) 간 일치도</td><td>실루엣만으로 판단하기 어려운 <b>실제 의미 있는 분리</b> 여부 검증</td></tr>
+      <tr><td class="mono">군집 안정성</td><td>서로 다른 random seed로 반복한 군집 결과 간 평균 ARI</td><td>결과가 <b>운(seed)에 좌우되지 않는지</b> 확인</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <span class="lbl">선정 근거</span>
+    비지도 학습에는 정답 레이블이 없어 accuracy·F1을 쓸 수 없다. 실루엣 점수만으로는
+    "수학적으로 잘 갈라졌다"까지만 알 수 있고, 그 분리가 실제로 의미 있는 분리인지는 알 수
+    없다. 그래서 파일명에서 뽑아낸 대리 정답으로 ARI/NMI를 함께 확인해, <b>군집이 실제 상품군과
+    일치하는지</b>까지 검증하는 이중 체계를 사용했다.
+  </div>
+
+  <h3 class="subhead"><span class="bar"></span>4.3 데이터 전처리 &amp; 벡터화</h3>
+  <pre class="code">lemmar = WordNetLemmatizer()
+def LemNormalize(text):
+    return LemTokens(nltk.word_tokenize(text.lower().translate(remove_punct_dict)))
+
+tfidf_vect = TfidfVectorizer(tokenizer=LemNormalize, stop_words='english',
+                              ngram_range=(1,2), min_df=0.05, max_df=0.85)
+count_vect = CountVectorizer(tokenizer=LemNormalize, stop_words='english',
+                              ngram_range=(1,2), min_df=0.05, max_df=0.85)</pre>
+  <p>
+    표제어 추출(lemmatization)로 <span class="badge-tag">running/runs/ran → run</span> 같은 활용형을
+    통일하고, 영어 불용어를 제거한 뒤 1~2gram으로 벡터화했다. <span class="badge-tag">min_df=0.05</span>는
+    51개 문서 중 최소 3개(5%) 미만에서만 등장하는 희귀 단어를 제외해 노이즈를 줄이고,
+    <span class="badge-tag">max_df=0.85</span>는 85% 이상 문서에 공통으로 등장하는 단어(사실상
+    불용어에 가까운 범용 단어)를 추가로 걸러낸다.
+  </p>
+
+  <h3 class="subhead"><span class="bar"></span>4.4 군집화 방법 비교</h3>
+  <p>
+    벡터화 방식(TF-IDF, Count, Count+L2정규화) × 군집화 알고리즘(K-means, DBSCAN) 조합 5가지를
+    동일한 <span class="badge-tag">k=3</span>(K-means) 기준으로 비교했다. DBSCAN은 군집 수를
+    직접 지정할 수 없으므로, 대신 <span class="badge-tag">eps</span> 파라미터를 코사인 거리
+    5~55 백분위수 구간에서 탐색해 실루엣 점수가 가장 높은 값을 자동 선택했다
+    (TF-IDF eps=0.7199, Count eps=0.7983).
+  </p>
+  <table>
+    <thead><tr><th>조합</th><th class="num">군집 수</th><th class="num">노이즈 비율</th><th class="num">실루엣 점수</th></tr></thead>
+    <tbody>
+      <tr><td>TF-IDF + KMeans</td><td class="num">3</td><td class="num">0.000</td><td class="num">0.0573</td></tr>
+      <tr class="hl"><td>Count + KMeans</td><td class="num">3</td><td class="num">0.000</td><td class="num">0.5489</td></tr>
+      <tr><td>Count(정규화) + KMeans</td><td class="num">3</td><td class="num">0.000</td><td class="num">0.0625</td></tr>
+      <tr><td>TF-IDF + DBSCAN</td><td class="num">4</td><td class="num">0.275</td><td class="num">0.1249</td></tr>
+      <tr><td>Count + DBSCAN</td><td class="num">2</td><td class="num">0.118</td><td class="num">0.2194</td></tr>
+    </tbody>
+  </table>
+  <figure class="nobreak">
+    <img src="report_assets/opiniosis_silhouette.png" alt="조합별 실루엣 점수">
+    <figcaption><b>그림 4-1.</b> 벡터화×군집화 조합별 실루엣 점수 비교(k=3).</figcaption>
+  </figure>
+  <div class="insight">
+    <b>Count 벡터가 TF-IDF보다 실루엣 점수에서 압도적으로 높은(0.5489 vs 0.0573) 이유.</b>
+    TF-IDF는 문서마다 등장 빈도를 <b>역문서빈도(IDF)로 재조정</b>해 희귀 단어의 가중치를 키운다.
+    이 과정에서 벡터 공간의 스케일이 문서별로 고르게 정규화되지 않아, 51개라는 적은 문서
+    수에서는 오히려 군집 간 거리 구조가 흐트러질 수 있다. 반면 원시 등장 횟수(Count)는 문서
+    길이·핵심 단어 반복 횟수를 그대로 반영해, 이 데이터에서는 더 뚜렷한 군집 경계를 만들었다.
+    다만 실루엣 점수가 높다고 그 군집이 <b>의미상으로도</b> 옳은 분리인지는 별도로 확인해야
+    하므로(§4.6.3), 이 결과만으로 최종 결론을 내리지 않는다.
+  </div>
+  <p>
+    <strong>DBSCAN</strong>은 두 벡터화 방식 모두에서 K-means보다 실루엣 점수가 낮고, 노이즈로
+    분류되는 문서 비율도 11.8~27.5%에 달했다. DBSCAN은 밀도가 일정하지 않으면 군집을 놓치기
+    쉬운데, 51개 문서·상품군별 문서 수 불균형(전자기기 25 vs 자동차 10)이 있는 이 데이터에는
+    K-means가 더 안정적으로 맞았다.
+  </p>
+
+  <h3 class="subhead"><span class="bar"></span>4.5 차원 축소(TruncatedSVD) 효과 검증</h3>
+  <p>
+    TF-IDF 벡터에 TruncatedSVD를 적용하는 것이 실제로 군집 품질을 개선하는지 검증했다. 서로
+    다른 차원 공간의 실루엣 점수는 직접 비교할 수 없으므로(고차원일수록 거리가 집중돼 실루엣이
+    구조적으로 낮게 나옴), <strong>대리 정답 기반 외부 평가(ARI/NMI)</strong>를 사용했고,
+    random seed 30개로 반복해 군집 안정성도 함께 측정했다.
+  </p>
+  <table>
+    <thead><tr><th>파이프라인</th><th class="num">ARI(대상종류)</th><th class="num">NMI(대상종류)</th><th class="num">ARI(주제)</th><th class="num">NMI(주제)</th><th class="num">안정성</th></tr></thead>
+    <tbody>
+      <tr><td>A. TF-IDF (baseline)</td><td class="num">0.9966</td><td class="num">0.9954</td><td class="num">0.0456</td><td class="num">0.4362</td><td class="num">0.9932</td></tr>
+      <tr class="hl"><td>B. SVD(n_components=5)</td><td class="num">1.0000</td><td class="num">1.0000</td><td class="num">0.0455</td><td class="num">0.4359</td><td class="num">1.0000</td></tr>
+      <tr><td>B. SVD(n_components=10)</td><td class="num">0.9219</td><td class="num">0.9494</td><td class="num">0.0445</td><td class="num">0.4336</td><td class="num">0.8609</td></tr>
+      <tr><td>B. SVD(n_components=20)</td><td class="num">0.9682</td><td class="num">0.9716</td><td class="num">0.0463</td><td class="num">0.4378</td><td class="num">0.9379</td></tr>
+      <tr><td>B. SVD(n_components=40)</td><td class="num">0.9913</td><td class="num">0.9892</td><td class="num">0.0455</td><td class="num">0.4360</td><td class="num">0.9827</td></tr>
+    </tbody>
+  </table>
+  <figure class="nobreak">
+    <img src="report_assets/opiniosis_svd_ari.png" alt="SVD 축소 차원에 따른 ARI 변화">
+    <figcaption><b>그림 4-2.</b> TruncatedSVD n_components에 따른 대상 종류 기준 평균 ARI(시드 30회 평균). 점선은 baseline(TF-IDF, 원차원) 기준.</figcaption>
+  </figure>
+  <div class="insight">
+    <b>대상 종류(전자기기/자동차/호텔) 기준.</b> baseline이 이미 ARI 0.9966으로 거의 완벽하다 —
+    TF-IDF 벡터 자체가 도메인별로 어휘가 뚜렷이 갈리는 데이터라 개선 여지가 크지 않다.
+    <span class="badge-tag">n_components=5</span>일 때만 ARI 1.0000·안정성 1.0000으로 baseline을
+    근소하게 앞서고, <span class="badge-tag">n_components=10~40</span>은 오히려 baseline보다
+    낮다. <b>즉 SVD는 성분 수를 작게(5 근처) 잡을 때만 미세한 개선이 있고, 성분 수를 늘릴수록
+    이득이 사라지거나 역전된다.</b><br><br>
+    <b>주제(aspect, 35개 세부 클래스) 기준.</b> baseline과 SVD 모두 ARI가 0.05 미만으로 낮다.
+    이는 <span class="badge-tag">n_clusters=3</span>으로는 애초에 35개 세부 주제를 구분할 수
+    없기 때문이며, 두 파이프라인 간 우열을 가리는 근거로 쓸 수 없다.
+  </div>
+  <p class="small-note">
+    참고로 문서 51개에 대해 TruncatedSVD 상위 40개 축의 누적 설명분산비는 n=10에서 45.2%,
+    n=20에서 71.8%, n=40에서 97.7%였다 — n_components 상한을 40 부근으로 잡은 근거다.
+  </p>
+  <div class="callout">
+    <span class="lbl">종합 판단</span>
+    이 데이터셋(문서 51개, 도메인 어휘가 뚜렷함)에서는 TruncatedSVD 도입이 <b>필수가 아니다</b>.
+    baseline이 이미 충분히 좋고, SVD는 성분 수를 잘 고르면 아주 소폭의 안정성·정확도 이득을
+    줄 뿐 극적인 개선은 아니다. 문서 수가 많고 어휘 중첩이 큰 데이터셋일수록 SVD의 효과가
+    더 크게 나타날 가능성이 높다.
+  </div>
+
+  <h3 class="subhead"><span class="bar"></span>4.6 성능 검증 결과 &amp; 감성 분석</h3>
+  <h4 class="subhead2">4.6.1 파이프라인 요약 다이어그램</h4>
+  <div class="pipeline nobreak">
+    <div class="step"><span class="num">1</span><br>51개 문서<br>로딩</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">2</span><br>Lemmatize +<br>불용어 제거</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">3</span><br>TF-IDF/Count<br>벡터화</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">4</span><br>K-means/DBSCAN<br>5조합 비교</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">5</span><br>대리정답 ARI/NMI<br>+ SVD 검증</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">6</span><br>VADER<br>감성 분석</div>
+  </div>
+
+  <h4 class="subhead2">4.6.2~4.6.3 지표 결과 및 해석 — 군집 키워드 육안 확인</h4>
+  <p>각 군집에서 중심점(centroid)에 가장 가까운 상위 10개 단어를 뽑아, 실제로 상품군을 반영하는지 확인했다.</p>
+  <table>
+    <thead><tr><th>파이프라인</th><th>Cluster 0</th><th>Cluster 1</th><th>Cluster 2</th></tr></thead>
+    <tbody>
+      <tr><td>A. baseline(TF-IDF)</td><td class="mono">mileage, kindle, page, gas, button, gas mileage, font, performance, book, eye</td><td class="mono">room, hotel, service, staff, interior, food, location, seat, comfortable, bathroom</td><td class="mono">screen, battery, battery life, life, keyboard, video, direction, voice, map, feature</td></tr>
+      <tr class="hl"><td>B. SVD(n=5)</td><td class="mono">screen, battery, keyboard, size, direction, voice, map, battery life, display, speed</td><td class="mono">interior, seat, mileage, comfortable, gas, gas mileage, performance, comfort, car, ride</td><td class="mono">room, service, hotel, staff, location, food, clean, room service, price, service wa</td></tr>
+    </tbody>
+  </table>
+  <div class="insight">
+    <b>두 파이프라인 모두 3개 상품군(전자기기·자동차·호텔)에 대응하는 키워드가 뚜렷하게
+    드러난다</b> — battery/screen/keyboard(전자기기), mileage/seat/comfort(자동차),
+    room/service/staff(호텔). 다만 <b>단어 목록만 놓고 비교하면 SVD(n=5) 쪽이 더 깔끔하다.</b>
+    baseline의 Cluster 0에는 "kindle"과 "mileage/gas"가 함께 섞여 있어(전자기기+자동차 어휘
+    공존), 이 군집 하나에 서로 다른 두 상품군의 리뷰가 걸쳐 있을 가능성을 시사한다. SVD(n=5)의
+    Cluster 1은 "interior, seat, mileage, gas, performance, car"처럼 자동차 어휘로만 깔끔하게
+    구성돼 있다. §4.5의 ARI 수치(baseline 0.9966 vs SVD n=5 1.0000)와 같은 방향의 근거다 —
+    <b>SVD(n=5)가 근소하지만 baseline보다 더 깨끗하게 분리한다.</b>
+  </div>
+
+  <h4 class="subhead2">4.6.4 감성 분석(VADER) 결과</h4>
+  <p>
+    문서 단위로 감성 점수를 내면 문장 수 차이 때문에 극단적으로 쏠릴 수 있어, <strong>원본 문장
+    단위</strong>로 VADER 감성 점수를 계산한 뒤 문서(파일)별 긍정/중립/부정 비율로 다시 집계했다.
+  </p>
+  <figure class="nobreak">
+    <img src="report_assets/opiniosis_sentiment.png" alt="전체 문장 감성 분포">
+    <figcaption><b>그림 4-3.</b> 전체 문장(7,086개) 감성 분포 — 긍정 62.4%, 중립 21.5%, 부정 16.2%.</figcaption>
+  </figure>
+  <div class="insight">
+    <b>해석.</b> 이 데이터셋은 상품·서비스 리뷰 모음이라 전반적으로 긍정 문장이 많다(62.4%).
+    다만 <b>부정 문장도 16.2%(약 1,145개)</b>로 무시할 수 없는 비중이다. 실제 서비스 운영
+    관점에서는 각 군집(상품군)별로 부정 비율이 높은 세부 주제(aspect)를 추려내면, "어떤
+    측면에서 불만이 집중되는지"까지 파악할 수 있다 — 이는 군집화와 감성 분석을 결합해야만
+    나올 수 있는 인사이트로, 감성 점수 하나만 보거나 군집 결과 하나만 보는 것보다 실무적
+    가치가 크다.
+  </div>
+
+  <div class="callout tip">
+    <span class="lbl">4장 종합</span>
+    실루엣 점수 기준 최고 조합은 <b>Count + K-means(0.5489)</b>지만, 대리 정답 기준 외부 평가와
+    군집 키워드 확인까지 종합하면 <b>TF-IDF 기반 파이프라인(특히 SVD n_components=5)이 상품군을
+    더 정확하고 안정적으로 반영</b>한다. 이는 <b>내부 지표(실루엣)와 외부 지표(ARI/NMI)가
+    항상 같은 결론을 가리키지는 않는다</b>는 것을 보여주는 사례이며, 비지도 학습에서는 가능한
+    한 여러 지표를 함께 보는 것이 중요하다는 근거가 된다.
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 5. MERCARI -->
+<!-- ============================================================ -->
+<div class="page">
+  <div class="run-head"><span>ML 종합 보고서 · Mercari Price Suggestion</span><span>5 · 프로젝트 개요</span></div>
+  <div class="sec-head">
+    <div class="no">05</div>
+    <div class="tt"><h2>Mercari Price Suggestion</h2><div class="desc">중고거래 상품 가격 예측 — 회귀, 대규모 텍스트·범주형 피처</div></div>
+  </div>
+  <hr class="sec-head-rule">
+
+  <h3 class="subhead"><span class="bar"></span>5.1 프로젝트 개요</h3>
+  <p>
+    상품명·설명·브랜드·카테고리·상태·배송 여부가 주어졌을 때 판매 가격(price)을 예측하는
+    <strong>회귀</strong> 문제다. 목표 변수가 연속적인 실수값이라 분류가 아닌 회귀로 정의된다.
+    담당 모델은 <strong>LinearRegression</strong>이며, Ridge·Lasso·RandomForest·XGBoost와 비교했다.
+  </p>
+
+  <div class="stat-row">
+    <div class="stat"><div class="n">1,482,535</div><div class="c">학습 데이터 행 수</div></div>
+    <div class="stat"><div class="n">8 → 44,941</div><div class="c">원본 컬럼 수 → 벡터화 후 피처 차원</div></div>
+    <div class="stat"><div class="n gold">42.67%</div><div class="c">brand_name 결측 비율</div></div>
+    <div class="stat"><div class="n">0.4818</div><div class="c">RMSLE (LinearRegression, 채택)</div></div>
+  </div>
+
+  <h4 class="subhead2">5.1.1 입력 피처 구성</h4>
+  <table>
+    <thead><tr><th>#</th><th>컬럼명</th><th>설명</th><th>타입</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td class="mono">name</td><td>상품명(텍스트)</td><td>Text</td></tr>
+      <tr><td>2</td><td class="mono">item_condition_id</td><td>상품 상태 — 1(최상)~5(최하)</td><td>Ordinal</td></tr>
+      <tr><td>3</td><td class="mono">category_name</td><td>대/중/소 분류가 "/"로 결합</td><td>Text/Cat</td></tr>
+      <tr><td>4</td><td class="mono">brand_name</td><td>브랜드명 — 결측 다수</td><td>Categorical</td></tr>
+      <tr><td>5</td><td class="mono">shipping</td><td>배송비 부담 주체 — 1:판매자, 0:구매자</td><td>Binary</td></tr>
+      <tr><td>6</td><td class="mono">item_description</td><td>상품 상세 설명(텍스트)</td><td>Text</td></tr>
+      <tr class="hl"><td>-</td><td class="mono">price</td><td>예측 대상 종속변수(달러)</td><td>Target</td></tr>
+    </tbody>
+  </table>
+
+  <h4 class="subhead2">5.1.2 EDA 요약 통계</h4>
+  <p>
+    <span class="badge-tag">shipping</span>은 구매자 부담(0) 819,435건, 판매자 부담(1) 663,100건으로
+    비교적 균형 잡혀 있다. <span class="badge-tag">item_condition_id</span>는 1(최상) 640,549건이
+    가장 많고 5(최하)는 2,384건에 불과해, 대부분 상태가 양호한 중고품이다.
+  </p>
+
+  <h4 class="subhead2">5.1.3 결측치 현황</h4>
+  <table>
+    <thead><tr><th>컬럼</th><th class="num">결측치 건수</th><th class="num">비율</th><th>처리 필요성</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">category_name</td><td class="num">6,327</td><td class="num">0.43%</td><td>낮음</td></tr>
+      <tr class="hl"><td class="mono">brand_name</td><td class="num">632,682</td><td class="num">42.67%</td><td>매우 높음</td></tr>
+      <tr><td class="mono">item_description</td><td class="num">6</td><td class="num">&lt;0.01%</td><td>무시 가능</td></tr>
+    </tbody>
+  </table>
+  <p class="small-note">
+    참고: item_description에는 실제 결측(NaN)은 6건뿐이지만, "No description yet"이라는 placeholder
+    문자열이 82,489건 있다 — 형식적으로는 결측이 아니지만 실질적으로는 정보가 없는 값이다.
+  </p>
+  <figure class="nobreak">
+    <img src="report_assets/mercari_missing.png" alt="컬럼별 결측치 현황(로그 스케일)">
+    <figcaption><b>그림 5-1.</b> 컬럼별 결측치 건수(log scale). brand_name의 결측(632,682건)은 category_name(6,327건)보다 두 자릿수, item_description(6건)보다 다섯 자릿수 많다.</figcaption>
+  </figure>
+  <div class="insight">
+    <b>로그 스케일로 봐야 하는 이유.</b> 세 컬럼의 결측 건수를 선형 축으로 그리면 brand_name
+    막대만 보이고 나머지 두 컬럼은 눈에 띄지 않을 만큼 차이가 크다(약 100배·10만 배). 로그
+    스케일은 이 격차를 한 그래프 안에서 동시에 읽을 수 있게 해준다. <b>brand_name만 42.67%가
+    비어 있다는 것은 "결측치가 있다"는 사실보다 "브랜드 정보 없이도 가격을 맞혀야 하는 상품이
+    전체의 절반 가까이"라는 의미로 읽어야 한다</b> — 이 문제를 그대로 두면 브랜드 프리미엄이
+    실제로 존재하는데도 모델이 이를 절반의 데이터에서만 학습하게 되므로, §5.3의 브랜드 역추론이
+    필요한 이유가 된다.
+  </div>
+
+  <h4 class="subhead2">5.1.4 Feature 이름 특징</h4>
+  <p>
+    <span class="badge-tag">category_name</span>은 <span class="badge-tag">Women/Tops/T-shirts</span>처럼
+    대/중/소 분류가 "/"로 묶여 있다. 대분류만도 <strong>11종(Women 664,385 / Beauty 207,828 /
+    Kids 171,689 / Electronics 122,690 / Men 93,680 / Home 67,871 / Vintage &amp; Collectibles 46,530
+    / Other 45,351 / Handmade 30,842 / Sports &amp; Outdoors 25,342 / Other_Null 6,327)</strong>이며,
+    중분류 114종·소분류 871종으로 계층이 깊다.
+  </p>
+
+  <h4 class="subhead2">5.1.5~5.1.6 동일 값 · 중복 Feature</h4>
+  <p>
+    원본 8개 컬럼은 각각 서로 다른 정보를 담고 있어 분산 0이거나 완전 중복인 컬럼은 없다.
+    다만 <span class="badge-tag">category_name</span>과 파생 컬럼 <span class="badge-tag">cat_so</span>(소분류,
+    871종)는 <span class="badge-tag">cat_dae</span>·<span class="badge-tag">cat_jung</span>과 계층적으로
+    겹치는 정보가 많아, 선형 모델의 계수 추정이 불안정해지지 않도록 <span class="badge-tag">cat_so</span>는
+    최종 피처에서 제외했다(§5.4).
+  </p>
+
+  <h4 class="subhead2">5.1.7 타깃 변수(price) 분포 분석</h4>
+  <figure class="nobreak">
+    <img src="report_assets/mercari_price.png" alt="price 분포">
+    <figcaption><b>그림 5-2.</b> price 원본 분포(≤$200 구간, 왜도 11.39) vs log1p 변환 후(왜도 0.66).</figcaption>
+  </figure>
+  <div class="insight">
+    <b>해석.</b> 평균과 중앙값의 차이가 크고 고가 상품이 소수 존재해 오른쪽으로 긴 꼬리를
+    가진 분포다. log1p 변환 이후 왜도가 11.39 → 0.66으로 크게 완화되며, 이는 종속변수를
+    <span class="badge-tag">log1p(price)</span> 형태로 학습에 사용하는 근거가 된다(§5.3).
+  </div>
+
+  <h3 class="subhead"><span class="bar"></span>5.2 결과 지표</h3>
+  <h4 class="subhead2">5.2.1 결과 지표 정의 및 선정 근거 — RMSLE</h4>
+  <div class="callout">
+    <span class="lbl">RMSLE (Root Mean Squared Logarithmic Error)</span>
+    <span class="mono">RMSLE = sqrt( mean( (log1p(pred) − log1p(actual))² ) )</span> — 예측값과
+    실제값에 각각 log1p를 취한 뒤 오차를 제곱평균제곱근한 값이다. 가격이 $0일 때 log(0)이
+    정의되지 않는 문제를 막기 위해 항상 +1을 더한다.
+  </div>
+  <p>
+    RMSLE를 선택한 이유는 두 가지다. 첫째, 절대 오차가 아닌 <strong>비율 오차</strong>를
+    평가한다 — $10짜리 상품을 $20으로 예측한 오차(2배)와 $100짜리 상품을 $110으로 예측한
+    오차(1.1배)는 절대 오차가 똑같이 $10이지만, RMSLE는 전자를 훨씬 크게 벌점을 준다. 저가
+    상품이 많은 이 데이터셋에서는 이 비율 감각이 훨씬 중요하다. 둘째, <strong>실제보다 낮게
+    예측했을 때 더 큰 벌점</strong>을 준다 — 예를 들어 실제 $100인 상품을 $50으로 예측하면
+    RMSLE 기여분이 약 0.69이지만, $150으로 예측하면 약 0.40에 그친다(동일한 $50 오차인데도).
+  </p>
+  <div class="callout tip">
+    <span class="lbl">중고 거래 플랫폼 관점에서의 의미</span>
+    판매자에게 가격을 <b>너무 낮게 추천</b>하면 실제 손해(제값을 못 받음)로 이어지고, <b>너무
+    높게 추천</b>하면 거래가 안 되는 정도의 문제로 그친다. RMSLE는 이 비대칭을 그대로 반영해,
+    저가 예측에 더 민감한 지표로 작동한다.
+  </div>
+
+  <h4 class="subhead2">5.2.2 결과 지표 해석 계획</h4>
+  <p>
+    학습은 <span class="badge-tag">log1p(price)</span> 기준으로 진행하고, 평가할 때는
+    <span class="badge-tag">expm1</span>로 원래 달러 단위로 복원한 뒤 RMSLE를 계산한다.
+    이렇게 해야 "학습 목표"와 "최종 평가 지표"가 같은 로그 공간에서 일관되게 유지된다.
+  </p>
+
+  <h3 class="subhead"><span class="bar"></span>5.3 데이터 전처리 &amp; 클리닝</h3>
+  <table>
+    <thead><tr><th>대상</th><th>처리</th></tr></thead>
+    <tbody>
+      <tr><td>price</td><td><span class="mono badge-tag">log1p(price)</span> 변환 후 학습에 사용</td></tr>
+      <tr><td>category_name</td><td>"/" 기준으로 <span class="mono">cat_dae/cat_jung/cat_so</span> 3단 분할</td></tr>
+      <tr><td>brand_name</td><td>결측치 보완(아래) 후 나머지는 <span class="mono">"Other_Null"</span>로 채움</td></tr>
+      <tr><td>item_description</td><td>결측 6건을 <span class="mono">"Other_Null"</span>로 채움</td></tr>
+    </tbody>
+  </table>
+  <pre class="code">known_brands = set(mercari_df.loc[mercari_df['brand_name'].notnull(), 'brand_name'].unique())
+
+def find_brand_in_name(name, brand_set):
+    words = str(name).split()
+    for size in (3, 2, 1):          # 긴 조합부터 우선 매칭 (예: "Kate Spade" > "Kate")
+        for i in range(len(words) - size + 1):
+            candidate = ' '.join(words[i:i+size])
+            if candidate in brand_set:
+                return candidate
+    return None
+# 브랜드 결측(보완 전): 632,682건 → name에서 역추론으로 채운 행: 148,714건
+# 역추론 후에도 남은 결측(Other_Null로 채워질 행): 483,968건</pre>
+  <div class="insight">
+    <b>브랜드 역추론의 효과.</b> brand_name이 결측인 632,682건 중, 상품명(name)에 이미 기존
+    브랜드명이 등장하는 경우를 찾아 148,714건(23.5%)을 보완했다. 이 방식은 <b>새로운 브랜드
+    카테고리를 만들지 않고</b> 기존 brand_name 값 중에서만 채우므로, 이후 원-핫 인코딩 시
+    차원 수가 늘어나지 않으면서도 정보 손실을 줄이는 효율적인 방법이다.
+  </div>
+
+  <h3 class="subhead"><span class="bar"></span>5.4 피처 구조화 &amp; 엔지니어링</h3>
+  <div class="pipeline nobreak">
+    <div class="step"><span class="num">1</span><br>name<br>CountVectorizer(1,2-gram)<br>max_features=20000</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">2</span><br>item_description<br>TF-IDF(1,3-gram)<br>max_features=20000</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">3</span><br>brand_name·cat_dae·<br>cat_jung 원-핫(희소)</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">4</span><br>condition·shipping<br>원-핫(희소)</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">5</span><br>scipy.sparse.hstack<br>→ (1482535, 44941)</div>
+  </div>
+  <p>
+    <span class="badge-tag">name</span>은 평균 길이가 짧아 단어 등장 빈도로 변별하기 어려우므로
+    단순 등장 횟수(CountVectorizer)를 사용했다. <span class="badge-tag">item_description</span>은
+    문서 전반에 공통적으로 쓰이는 단어가 많아, 핵심 단어에 가중치를 주는 TF-IDF를 사용했다.
+    범주형 변수(brand_name, item_condition_id, shipping, cat_dae, cat_jung)는
+    <span class="badge-tag">LabelBinarizer(sparse_output=True)</span>로 희소 원-핫 인코딩했다 —
+    브랜드처럼 종류가 많은 변수를 밀집(dense) 배열로 만들면 메모리가 급격히 늘어나기 때문이다.
+  </p>
+  <div class="callout warn">
+    <span class="lbl">파라미터 선택 근거</span>
+    <span class="mono">max_features=20000</span>은 TruncatedSVD로 후처리 축소하는 대신 벡터화
+    단계에서 바로 차원을 통제한 것이다. 값을 높이면 표현력은 늘지만 메모리·연산 부담과
+    과적합 위험이 커지고, 낮추면 가볍지만 드물게 등장해도 중요한 단어 정보를 잃을 수 있다.
+    <span class="mono">item_description</span>의 <span class="mono">ngram_range=(1,3)</span>은
+    "not good"처럼 단어 조합이 담는 문맥 정보를 살리기 위한 선택이다 — 범위를 (1,1)로
+    좁히면 이런 문맥 정보를 잃는다.
+  </div>
+
+  <h3 class="subhead"><span class="bar"></span>5.5 모델링 &amp; 하이퍼파라미터 튜닝</h3>
+  <h4 class="subhead2">기본 비교</h4>
+  <table>
+    <thead><tr><th>모델</th><th>조건</th><th class="num">RMSLE</th></tr></thead>
+    <tbody>
+      <tr class="hl"><td>LinearRegression (채택)</td><td>item_description 포함</td><td class="num">0.4818</td></tr>
+      <tr><td>LinearRegression</td><td>item_description 제외</td><td class="num">0.5154</td></tr>
+      <tr><td>Ridge</td><td>alpha=5 (5개 값 중 최선)</td><td class="num">0.4792</td></tr>
+      <tr><td>Lasso</td><td>alpha=0.01 (5개 값 중 최선)</td><td class="num">0.6924</td></tr>
+      <tr><td>RandomForest</td><td>n_estimators=100, max_depth=15</td><td class="num">0.7063</td></tr>
+      <tr><td>XGBoost</td><td>n_estimators=200, max_depth=6, 40만 행 서브샘플</td><td class="num">0.5251</td></tr>
+    </tbody>
+  </table>
+  <div class="insight">
+    <b>item_description을 제외하면 RMSLE가 0.4818→0.5154로 악화된다.</b> 텍스트 설명에 담긴
+    정보(재질, 상태, 브랜드 언급 등)가 실제로 가격 예측에 기여한다는 뜻이다. <b>Lasso(alpha=0.01)의
+    RMSLE 0.6924는 LinearRegression보다 오히려 나쁘다</b> — L1 정규화가 계수를 0으로 밀어내는
+    특성상, alpha가 0.1 이상이면 거의 모든 계수가 0이 되어 절편만 남는 상태로 수렴했다(실행
+    기록상 alpha≥0.1에서 RMSLE가 0.7511로 동일하게 수렴). 44,941차원처럼 극도로 넓고 희소한
+    피처 공간에서는 Lasso의 강한 피처 선택이 오히려 유용한 신호까지 함께 지워버린 것으로
+    판단한다.
+  </div>
+
+  <h4 class="subhead2">Optuna 하이퍼파라미터 탐색</h4>
+  <p>
+    Ridge·Lasso·RandomForest·XGBoost에 대해 20만 행 샘플로 Optuna 탐색을 수행한 뒤, 찾은
+    최적 하이퍼파라미터로 전체 데이터를 재학습해 최종 RMSLE를 산출했다(모델 간 공정한 비교를
+    위해 최종 비교는 항상 전체 데이터 기준).
+  </p>
+  <table>
+    <thead><tr><th>모델</th><th>탐색 파라미터</th><th class="num">전체 재학습 RMSLE</th></tr></thead>
+    <tbody>
+      <tr class="hl"><td>Ridge</td><td class="mono">alpha≈5.59</td><td class="num">0.4792</td></tr>
+      <tr><td>Lasso</td><td class="mono">alpha≈0.0001</td><td class="num">0.5439</td></tr>
+      <tr><td>RandomForest</td><td class="mono">n_estimators=124, max_depth=10, min_samples_leaf=1</td><td class="num">0.7202</td></tr>
+      <tr><td>XGBoost</td><td>탐색된 파라미터, 40만 행 서브샘플 재학습</td><td class="num">0.5251</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn">
+    <span class="lbl">서브샘플링이 필요했던 이유</span>
+    XGBoost의 <span class="mono">tree_method='hist'</span>는 내부적으로 (행×열) 크기의 밀집
+    bin 버퍼를 만드는데, 44,941열 × 148만 행 전체를 그대로 넣으면 약 53GB 메모리가 필요해
+    <span class="mono">bad_malloc</span> 오류가 발생한다. 다른 모델처럼 전체 행을 쓰는 대신
+    40만 행으로 서브샘플링해 메모리를 안전한 범위로 제한했다 — 이는 <b>정확도보다 실행
+    가능성을 우선한 현실적 제약</b>이며, XGBoost의 RMSLE(0.5251)가 Ridge(0.4792)보다 나쁜 데는
+    이 서브샘플링으로 학습 데이터가 148만 건에서 40만 건으로 줄어든 영향도 있을 수 있다.
+  </div>
+  <p>
+    <strong>RandomForest는 Optuna 튜닝 후에도(0.7202) 기본 설정(0.7063)보다 오히려 나빠졌다.</strong>
+    탐색 공간을 <span class="mono">n_estimators 50~150, max_depth 6~14</span>로 계산 비용 때문에
+    좁게 제한한 탓에, 이 고차원 희소 데이터에 필요한 트리 깊이·개수를 충분히 탐색하지 못한
+    것으로 판단한다. 즉 <b>탐색 범위 자체가 병목</b>이 될 수 있다는 사례다.
+  </p>
+
+  <h3 class="subhead"><span class="bar"></span>5.6 성능 검증 결과</h3>
+  <h4 class="subhead2">5.6.1 파이프라인 요약 다이어그램</h4>
+  <div class="pipeline nobreak">
+    <div class="step"><span class="num">1</span><br>원본 로딩<br>(1482535, 8)</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">2</span><br>price log1p<br>+ 카테고리 분할</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">3</span><br>brand_name<br>결측 보완</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">4</span><br>벡터화 +<br>희소행렬 결합</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">5</span><br>LinearRegression<br>학습</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="num">6</span><br>expm1 역변환<br>+ RMSLE 검증</div>
+  </div>
+
+  <h4 class="subhead2">5.6.2 지표 결과</h4>
+  <table>
+    <thead><tr><th>순위</th><th>모델</th><th>조건</th><th class="num">RMSLE</th></tr></thead>
+    <tbody>
+      <tr class="hl"><td>1</td><td>Ridge</td><td class="mono">alpha=5.59(Optuna)</td><td class="num">0.4792</td></tr>
+      <tr><td>2</td><td><b>LinearRegression (채택)</b></td><td>튜닝 없음(정규화 파라미터 없음)</td><td class="num">0.4818</td></tr>
+      <tr><td>3</td><td>XGBoost</td><td>Optuna, 40만 행 서브샘플</td><td class="num">0.5251</td></tr>
+      <tr><td>4</td><td>Lasso</td><td class="mono">alpha≈0.0001(Optuna)</td><td class="num">0.5439</td></tr>
+      <tr><td>5</td><td>RandomForest</td><td>Optuna</td><td class="num">0.7202</td></tr>
+    </tbody>
+  </table>
+
+  <h4 class="subhead2">5.6.3 지표 해석</h4>
+  <div class="insight">
+    <b>RMSLE 0.4818이 실무적으로 의미하는 것.</b> RMSLE를 "전형적인 상대 오차 폭"으로 근사
+    환산하면 <span class="mono">e^0.4818 ≈ 1.62</span>다. 즉 모델이 어떤 상품 가격을 <b>$20으로
+    예측했다면, 실제 가격은 대략 $12.4(=20÷1.62) ~ $32.4(=20×1.62) 범위</b>에 있을 가능성이
+    높다는 뜻이다(전체 오차 분포를 요약한 근사치이며, 개별 예측의 확정 구간은 아니다).
+    이는 정가가 명확한 신제품 판매에는 부족한 정밀도지만, <b>애초에 정가 자체가 불명확한
+    중고 개인 거래 플랫폼</b>에서는 "적정 가격대"를 제시하는 참고 지표로 실용적인 수준이다.
+  </div>
+  <p>
+    §5.5의 item_description 유무 비교(0.4818 vs 0.5154)에서 보듯, <strong>텍스트 정보가 RMSLE를
+    약 0.033 개선</strong>한다 — 위와 같은 근사로 환산하면 예측 오차 범위가 약 3.4%p 정도
+    좁아지는 효과다. 텍스트가 담긴 상품 설명이 정량적으로도 가격 예측에 기여한다는 근거다.
+  </p>
+
+  <h4 class="subhead2">회귀계수 해석 — 무엇이 가격을 올리고 내리는가</h4>
+  <p>
+    RMSLE는 "오차가 얼마나 큰가"만 말해준다. <strong>어떤 단어·카테고리가 실제로 가격을
+    끌어올리는지</strong>를 보려면 회귀계수를 직접 확인해야 한다. 다만 LinearRegression은
+    44,941차원 희소 피처 공간에서 정규화가 없어 개별 계수가 불안정하게 흔들릴 수 있으므로(§5.6.4에서
+    Ridge가 근소하게 더 우수한 이유와 같은 맥락), §5.6.2와 동일한 피처 조합·분할로 재학습한
+    <span class="badge-tag">Ridge(alpha=5)</span> 계수를 안정적인 대리 지표로 사용했다. 두 모델의
+    RMSLE 차이가 0.0026에 불과해(0.4818 vs 0.4792), Ridge 계수가 가리키는 방향은 LinearRegression이
+    학습한 관계와 사실상 같다고 볼 수 있다.
+  </p>
+  <div class="fig-2col">
+    <figure class="nobreak">
+      <img src="report_assets/mercari_coef_name.png" alt="name 단어별 가격 영향 상하위 10개">
+      <figcaption><b>그림 5-3.</b> name에 등장한 단어별 회귀계수(log-price 기준) 상위·하위 10개.</figcaption>
+    </figure>
+    <figure class="nobreak">
+      <img src="report_assets/mercari_coef_category.png" alt="대분류별 가격 영향">
+      <figcaption><b>그림 5-4.</b> 카테고리 대분류(cat_dae)별 회귀계수(log-price 기준).</figcaption>
+    </figure>
+  </div>
+  <div class="insight">
+    <b>계수를 실제 가격 배율로 환산하면.</b> 종속변수가 <span class="badge-tag">log1p(price)</span>이므로
+    계수는 곱셈(배율)으로 해석해야 한다 — 계수 <span class="mono">c</span>는 다른 조건이 같을 때
+    가격이 대략 <span class="mono">e^c</span>배가 됨을 뜻한다. 그림 5-3의 상위 10개 중
+    <span class="badge-tag">owlet</span>(1.585), <span class="badge-tag">dockatot</span>(1.495),
+    <span class="badge-tag">hatchimals/hatchimal</span>(1.468/1.447), <span class="badge-tag">dyson</span>
+    (1.282), <span class="badge-tag">airpods</span>(1.273)는 모두 실제로 <b>고가 프리미엄 브랜드·
+    상품명</b>이며, 계수를 배율로 바꾸면 대략 <b>3.6~4.9배</b> 높은 가격과 연결된다 — 상품명에
+    이런 단어가 포함되면 모델이 곧바로 "비싼 상품군"으로 인식한다는 뜻이다. 반대로 하위 10개 중
+    <span class="badge-tag">dustbag</span>(-0.788), <span class="badge-tag">sticker</span>(-0.647),
+    <span class="badge-tag">coupons</span>(-0.636), <span class="badge-tag">shoelaces</span>(-0.660)는
+    본품이 아니라 <b>본품에 딸린 부속품이나 낱개로 파는 저가 소모품</b>을 가리키는 단어들이며,
+    배율로는 대략 <b>0.46~0.53배</b>(원가의 절반 안팎) 수준으로 낮아진다. 같은 그림의
+    <span class="badge-tag">inr</span>·<span class="badge-tag">saudi</span>·<span class="badge-tag">9300hailey</span>처럼
+    단어 자체만으로는 의미를 특정하기 어려운 토큰도 섞여 있는데, 이는 CountVectorizer가 상품명에
+    붙은 모델번호·판매자 계정명까지 그대로 하나의 단어로 취급했기 때문으로 보이며, 이런 토큰의
+    개별 의미를 단정하지는 않는다.
+  </div>
+  <div class="insight">
+    <b>카테고리 대분류(cat_dae) 계수의 의미.</b> <span class="badge-tag">Electronics</span>(0.151,
+    약 +16%)와 <span class="badge-tag">Men</span>(0.096, 약 +10%)은 기준 대비 가격을 끌어올리고,
+    <span class="badge-tag">Beauty</span>(-0.116, 약 -11%)와 <span class="badge-tag">Home</span>
+    (-0.098, 약 -9%)은 가격을 끌어내린다. 이는 상식과도 일치한다 — 전자기기는 중고 상태여도
+    단가 자체가 높은 품목이 많고, 뷰티 제품은 소용량·소모품 위주라 단가가 낮게 형성된다.
+    <span class="badge-tag">Women</span>(전체의 44.8%를 차지하는 최대 카테고리)은 계수가 거의
+    0에 가까운데, 데이터에서 가장 큰 비중을 차지하는 카테고리라 모델의 "기준점"에 가장 가깝게
+    수렴한 것으로 해석한다. <b>즉 이 회귀계수는 RMSLE 수치 하나로는 보이지 않는, "카테고리
+    가격 프리미엄"이라는 실무적으로 바로 쓸 수 있는 정보를 추가로 제공한다.</b>
+  </div>
+
+  <h4 class="subhead2">5.6.4 모델별 결과 비교 및 추론</h4>
+  <figure class="nobreak">
+    <img src="report_assets/mercari_model_compare.png" alt="Mercari 모델 비교">
+    <figcaption><b>그림 5-5.</b> 담당(염윤호) 시도 모델 비교. XGBoost는 팀 공유 기록(40만 행 서브샘플) 기준.</figcaption>
+  </figure>
+  <div class="insight">
+    <b>Ridge(0.4792)가 LinearRegression(0.4818)보다 근소하게 우수한 이유.</b> 44,941차원 중
+    상당수가 희소(sparse)하고 표본이 적은 단어·브랜드 피처다. 정규화가 없는
+    LinearRegression은 이런 고차원 희소 데이터에서 계수가 불안정해지기 쉬운데, Ridge는
+    L2 정규화로 계수를 완만하게 수축시켜 이 불안정성을 줄인다. 다만 차이가 0.0026으로
+    작다는 점은, <b>이 피처 조합에서는 LinearRegression도 이미 충분히 안정적으로 수렴한다</b>는
+    뜻이기도 하다.<br><br>
+    <b>Lasso·RandomForest·XGBoost가 모두 LinearRegression/Ridge보다 나쁜 이유.</b> Lasso는
+    강한 피처 선택으로 유용한 희소 신호까지 제거했고(§5.5), RandomForest·XGBoost 같은 트리
+    기반 모델은 원-핫 인코딩된 초고차원 희소 행렬에서 <b>분기(split) 후보가 지나치게 많아
+    최적 분기를 찾기 어렵고</b>, 트리 개수·깊이를 계산 자원 제약 때문에 충분히 키우지 못했다.
+    반면 선형 모델은 모든 피처에 동시에 가중치를 부여하는 방식이라, 수만 개의 희소한 단어·
+    브랜드 신호를 개별적으로 조금씩 반영하는 이 문제 구조에 구조적으로 더 잘 맞는다.
+  </div>
+  <p><b>팀원 비교</b> — total_result.xlsx 기준, 다른 담당자가 같은 데이터셋에서 얻은 결과다.</p>
+  <table>
+    <thead><tr><th>담당자</th><th>모델</th><th class="num">RMSLE</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr class="hl"><td>안성준</td><td>LightGBM</td><td class="num">0.4562</td><td>하이퍼옵트 적용</td></tr>
+      <tr><td>안성준</td><td>Ridge</td><td class="num">0.4576</td><td>-</td></tr>
+      <tr><td>안성준</td><td>XGBoost</td><td class="num">0.4822</td><td>하이퍼옵트 적용</td></tr>
+      <tr class="hl"><td>염윤호(본인)</td><td>LinearRegression(채택)</td><td class="num">0.4818</td><td>-</td></tr>
+      <tr><td>염윤호(본인)</td><td>Ridge</td><td class="num">0.4791</td><td>Optuna</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <span class="lbl">가장 낮은 RMSLE(안성준, LightGBM 0.4562)에 대한 추론</span>
+    LightGBM은 트리 기반이지만 <b>리프 단위(leaf-wise) 성장 방식</b>과 자체적인 범주형·희소
+    피처 처리 최적화를 갖추고 있어, 본 파이프라인의 RandomForest·XGBoost보다 원-핫 인코딩된
+    초고차원 희소 데이터에서 상대적으로 더 효율적으로 분기 후보를 탐색한다. 또한 하이퍼옵트로
+    체계적인 탐색을 거쳤다는 점도 §5.5에서 지적한 "탐색 범위 부족" 문제를 상대적으로 덜 겪었을
+    가능성을 시사한다. 다만 본 담당자의 Ridge(0.4791)도 안성준님의 Ridge(0.4576)와 방향성은
+    비슷하면서 값에 차이가 있어, 전처리 파이프라인의 세부 차이(피처 조합, alpha 탐색 범위 등)가
+    남아 있음을 보여준다 — 팀 표준 전처리 함수 정립이 필요한 지점이다(§2.3의 팀원별 전처리
+    차이 문제와 동일한 맥락).
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 6. 회고 -->
+<!-- ============================================================ -->
+<div class="page">
+  <div class="run-head"><span>ML 종합 보고서</span><span>6 · 회고</span></div>
+  <div class="sec-head">
+    <div class="no">06</div>
+    <div class="tt"><h2>회고</h2><div class="desc">공백 — 추후 추가 예정</div></div>
+  </div>
+  <hr class="sec-head-rule">
+  <div class="callout">
+    <span class="lbl">작성 예정</span>
+    이 장은 프로젝트 종료 이후 팀 회고를 반영해 추후 작성한다.
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 7. 참고문헌 -->
+<!-- ============================================================ -->
+<div class="page">
+  <div class="run-head"><span>ML 종합 보고서</span><span>7 · 참고문헌</span></div>
+  <div class="sec-head">
+    <div class="no">07</div>
+    <div class="tt"><h2>참고문헌</h2><div class="desc">공백 — 추후 추가 예정</div></div>
+  </div>
+  <hr class="sec-head-rule">
+  <div class="callout">
+    <span class="lbl">작성 예정</span>
+    이 장은 인용·참고한 자료 목록을 추후 정리해 작성한다.
+  </div>
+</div>
+
+<!-- SECTIONS_END -->
+</body>
+</html>
