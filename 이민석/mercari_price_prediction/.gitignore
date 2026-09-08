@@ -1,0 +1,34 @@
+# Large data files
+data/raw/mercari_train.tsv
+data/raw/*.tsv
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Output files (keep models but ignore large intermediate files if needed)
+.pytest_cache/
+.coverage
+
+# OS specific
+Thumbs.db
+.DS_Store
