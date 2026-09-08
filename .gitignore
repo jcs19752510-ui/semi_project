@@ -1,2 +1,4 @@
 #정찬성 data 폴더 git upload 제외(개별적으로 위치만 변경해서 사용해 주세요.)
 creditcard.csv
+mercari_train.tsv
+topics 
