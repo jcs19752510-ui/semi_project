@@ -1,6 +1,16 @@
 # Large data files
+data/
 data/raw/mercari_train.tsv
 data/raw/*.tsv
+data/processed/
+
+# Pickle 파일 (모든 pickle 파일 제외)
+*.pkl
+*.pickle
+
+# Model files
+models/*.pkl
+models/*.joblib
 
 # Python cache
 __pycache__/

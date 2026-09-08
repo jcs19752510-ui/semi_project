@@ -80,9 +80,9 @@ Thumbs.db
 *.backup
 
 # ==============================================
-# Large Files (Optional - if needed)
+# Large Files (제외)
 # ==============================================
-# *.csv
-# *.xlsx
-# *.pkl
-# *.pickle
+*.csv
+*.xlsx
+*.pkl
+*.pickle
